@@ -6,6 +6,7 @@
 			"file": {
 				"/opt/zapret2/config": [ "read" ],
 				"/opt/zapret2/ipset/*": [ "read" ],
+				"/opt/zapret2/files/*": [ "read" ],
 				"/opt/zapret2/init.d/openwrt/custom.d/*": [ "read" ],
 				"/etc/crontabs/root": [ "read" ],
 				"/tmp/zapret*": [ "read" ],
@@ -33,6 +34,7 @@
 			"file": {
 				"/opt/zapret2/config": [ "write" ],
 				"/opt/zapret2/ipset/*": [ "write" ],
+				"/opt/zapret2/files/*": [ "write" ],
 				"/opt/zapret2/init.d/openwrt/custom.d/*": [ "write" ],
 				"/etc/crontabs/root": [ "write" ]
 			},

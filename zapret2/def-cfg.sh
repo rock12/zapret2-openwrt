@@ -279,6 +279,9 @@ function set_cfg_nfqws_strat
 				--payload=quic_initial
 				--lua-desync=fake:blob=fake_default_quic:repeats=11
 			"
+			commit $cfgname
+		EOF
+	fi
 	if [ "$strat" = "z2k_autocircular" ]; then
 		uci batch <<-EOF
 			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'

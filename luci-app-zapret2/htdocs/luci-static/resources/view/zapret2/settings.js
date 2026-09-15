@@ -272,6 +272,46 @@ return view.extend({
         o.rmempty     = false;
         o.datatype    = 'uinteger';
 
+        add_delim(s);
+
+        o = s.taboption(tabname, form.ListValue, '_strat_selector', _('Preset Strategy / Auto-Rotation'));
+        o.description = _('Select an anti-DPI strategy preset. "⚡ Z2K Auto-Rotation" automatically detects blocking and rotates strategies in a circle.');
+        o.value('-', _('-- Select Strategy Preset to Apply --'));
+        o.value('z2k_autocircular', '⚡ ' + _('Z2K Auto-Rotation (Автоподбор стратегий при сбоях)'));
+        o.value('flowseal_general', '🔥 ' + _('Flowseal Classic (YouTube 4K + Discord Voice)'));
+        o.value('flowseal_fake_tls_auto', '🚀 ' + _('Flowseal Fake TLS Auto (YouTube + Discord + General)'));
+        o.value('flowseal_simple_fake', '🍃 ' + _('Flowseal Simple Fake (Low CPU)'));
+        o.value('youtube_discord_ultimate', '🎯 ' + _('YouTube & Discord Ultimate'));
+        o.value('remittor_168', '🛡️ ' + _('Remittor #168 (with DoT DNS TCP 853)'));
+        o.value('v1_by_Schiz23', 'v1 by Schiz23');
+        o.value('v2_by_Schiz23', 'v2 by Schiz23');
+        o.value('default', _('Default'));
+        o.default = '-';
+
+        let btn_apply_strat = s.taboption(tabname, form.Button, '_apply_strat_btn', _('Apply Strategy'));
+        btn_apply_strat.inputtitle = _('Apply & Reload Strategy');
+        btn_apply_strat.inputstyle = 'btn cbi-button-action';
+        btn_apply_strat.description = _('Immediately applies the selected strategy preset and reloads Zapret2');
+        btn_apply_strat.onclick = () => {
+            let sel = document.querySelector('select[id*="_strat_selector"]');
+            let val = sel ? sel.value : '-';
+            if (!val || val === '-') {
+                ui.addNotification(null, E('p', _('Please select a strategy preset from the dropdown first.')));
+                return;
+            }
+            ui.addNotification(null, E('p', _('Applying strategy "%s", please wait...').format(val)));
+            return fs.exec('/opt/zapret2/restore-def-cfg.sh', [ '(skip_base)(sync)', val ]).then(res => {
+                if (res.code == 0) {
+                    ui.addNotification(null, E('p', _('Strategy "%s" applied successfully! Reloading service...').format(val)));
+                    return fs.exec('/etc/init.d/zapret2', [ 'restart' ]).then(() => {
+                        setTimeout(() => location.reload(), 1500);
+                    });
+                } else {
+                    ui.addNotification(null, E('p', _('Failed to apply strategy: ') + (res.stderr || res.stdout || '')));
+                }
+            });
+        };
+
         add_delim(s, tools.nfqws_opt_url);
         if (tools.appName == 'zapret2') {
             add_param(s, 'NFQWS2_OPT', null, 21, 2);
@@ -559,6 +599,111 @@ return view.extend({
                 }
             });
         };
+
+        add_delim(s);
+
+        o = s.taboption(tabname, form.DummyValue, '_gaming_lists_header');
+        o.rawhtml = true;
+        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Gaming & Telegram IP Lists (Click to View / Edit)') + '</h3>';
+
+        o = s.taboption(tabname, form.Button, '_edit_warzone_btn', _('Warzone / Call of Duty (772 subnets)'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/Warzone_CallOfDuty.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/Warzone_CallOfDuty.txt',
+            title: _('Warzone / Call of Duty IP CIDRs (772 subnets)'),
+            desc: _('Full CIDR range list for Call of Duty Warzone servers.<br />One subnet per line.'),
+            rows: 20,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_telegram_btn', _('Telegram IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/telegram_ips.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/telegram_ips.txt',
+            title: _('Telegram IP Ranges'),
+            desc: _('Transparent Telegram routing through WARP.<br />One CIDR per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_steam_btn', _('Steam IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/Steam.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/Steam.txt',
+            title: _('Steam Game & Voice Servers'),
+            desc: _('Steam servers list.<br />One subnet per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_ea_btn', _('EA / Origin IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/EA_Origin.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/EA_Origin.txt',
+            title: _('EA & Origin Game Servers'),
+            desc: _('EA/Origin servers list.<br />One subnet per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_battlenet_btn', _('Battle.net / Blizzard IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/BattleNet.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/BattleNet.txt',
+            title: _('Battle.net / Blizzard Servers'),
+            desc: _('Blizzard game servers list.<br />One subnet per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_epic_btn', _('Epic Games & Fortnite IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/EpicGames_Fortnite.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/EpicGames_Fortnite.txt',
+            title: _('Epic Games & Fortnite Servers'),
+            desc: _('Epic Games servers list.<br />One subnet per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_riot_btn', _('Riot Games & Valorant IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/RiotGames_Valorant.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/RiotGames_Valorant.txt',
+            title: _('Riot Games & Valorant Servers'),
+            desc: _('Riot Games servers list.<br />One subnet per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_roblox_btn', _('Roblox IP Ranges'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games/Roblox.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games/Roblox.txt',
+            title: _('Roblox Game Servers'),
+            desc: _('Roblox servers list.<br />One subnet per line.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_custom_games_btn', _('Custom Gaming IP List (User Added)'));
+        o.inputtitle = _('View / Edit');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/warp/games_user.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/warp/games_user.txt',
+            title: _('Custom Gaming IP List'),
+            desc: _('Add any custom game server IP subnets you wish to route via WARP.<br />One CIDR per line.'),
+            rows: 15,
+        }).show();
 
         let map_promise = m.render();
         map_promise.then(node => node.classList.add('fade-in'));
