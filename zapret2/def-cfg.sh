@@ -660,6 +660,7 @@ function set_cfg_nfqws_strat
 			"
 			commit $cfgname
 		EOF
+	fi
 	if [ "$strat" = "zm_games" ]; then
 		uci batch <<-EOF
 			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442'
