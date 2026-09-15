@@ -19,9 +19,11 @@
 				"/opt/zapret2/restore-def-cfg.sh*": [ "exec" ],
 				"/opt/zapret2/script-exec.sh*": [ "exec" ],
 				"/opt/zapret2/update-pkg.sh*": [ "exec" ],
-				"/opt/zapret2/sync_config.sh*": [ "exec" ]
+				"/opt/zapret2/sync_config.sh*": [ "exec" ],
+				"/opt/zapret2/warp.sh*": [ "exec" ],
+				"/opt/zapret2/update-lists.sh*": [ "exec" ]
 			},
-			"uci": [ "zapret2", "network" ],
+			"uci": [ "zapret2", "network", "firewall" ],
 			"ubus": {
 				"luci": [ "getInitList", "setInitAction" ],
 				"service": [ "list" ]
@@ -34,7 +36,7 @@
 				"/opt/zapret2/init.d/openwrt/custom.d/*": [ "write" ],
 				"/etc/crontabs/root": [ "write" ]
 			},
-			"uci": [ "zapret2" ]
+			"uci": [ "zapret2", "network", "firewall" ]
 		}
 	}
 }

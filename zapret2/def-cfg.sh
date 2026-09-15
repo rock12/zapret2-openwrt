@@ -362,6 +362,173 @@ function set_cfg_nfqws_strat
 			commit $cfgname
 		EOF
 	fi
+	if [ "$strat" = "flowseal_general" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				
+				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
+				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
+
+				--filter-tcp=80
+				--filter-l7=http <HOSTLIST>
+				--payload=http_req
+				--lua-desync=fake:blob=fake_default_http:tcp_md5
+				--lua-desync=multisplit:pos=method+2
+
+				--new
+				--filter-tcp=443
+				--filter-l7=tls <HOSTLIST>
+				--payload=tls_client_hello
+				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000
+				--lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=blob_tls_clienthello_www_google_com:tcp_ts_up
+
+				--new
+				--filter-tcp=2053,2083,2087,2096,8443
+				--filter-l7=tls <HOSTLIST>
+				--payload=tls_client_hello
+				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000
+				--lua-desync=multidisorder:pos=1,midsld
+
+				--new
+				--filter-udp=443
+				--filter-l7=quic <HOSTLIST_NOAUTO>
+				--payload=quic_initial
+				--lua-desync=fake:blob=blob_quic_initial_www_google_com:repeats=11
+
+				--new
+				--filter-udp=19294-19344,50000-65535
+				--filter-l7=discord,stun
+				--out-range=-n1
+				--payload=discord_ip_discovery,stun
+				--lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "remittor_168" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,853'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				
+				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
+				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
+
+				--filter-tcp=80
+				--filter-l7=http <HOSTLIST>
+				--payload=http_req
+				--lua-desync=fake:blob=fake_default_http:tcp_md5
+				--lua-desync=multisplit:pos=method+2
+
+				--new
+				--filter-tcp=443
+				--filter-l7=tls <HOSTLIST>
+				--payload=tls_client_hello
+				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000
+				--lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=blob_tls_clienthello_www_google_com:tcp_ts_up
+
+				--new
+				--filter-tcp=853
+				--lua-desync=multisplit:seqovl=8:seqovl_pattern=0x000100502112A442
+
+				--new
+				--filter-udp=443
+				--filter-l7=quic <HOSTLIST_NOAUTO>
+				--payload=quic_initial
+				--lua-desync=fake:blob=blob_quic_initial_www_google_com:repeats=11
+
+				--new
+				--filter-udp=50000-65535
+				--filter-l7=discord
+				--out-range=-n1
+				--payload=discord_ip_discovery
+				--lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "flowseal_fake_tls_auto" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				
+				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
+				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
+				--blob=blob_tls_clienthello_max_ru:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
+
+				--filter-tcp=80
+				--filter-l7=http <HOSTLIST>
+				--payload=http_req
+				--lua-desync=fake:blob=fake_default_http:tcp_md5
+				--lua-desync=multisplit:pos=method+2
+
+				--new
+				--filter-tcp=443,2053,2083,2087,2096,8443
+				--filter-l7=tls <HOSTLIST>
+				--payload=tls_client_hello
+				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_seq=-10000:badsum
+				--lua-desync=multidisorder:pos=1,midsld
+
+				--new
+				--filter-udp=443
+				--filter-l7=quic <HOSTLIST_NOAUTO>
+				--payload=quic_initial
+				--lua-desync=fake:blob=blob_quic_initial_www_google_com:repeats=11
+
+				--new
+				--filter-udp=19294-19344,50000-65535
+				--filter-l7=discord,stun
+				--out-range=-n1
+				--payload=discord_ip_discovery,stun
+				--lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "flowseal_simple_fake" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				
+				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
+				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
+
+				--filter-tcp=80
+				--filter-l7=http <HOSTLIST>
+				--payload=http_req
+				--lua-desync=fake:blob=fake_default_http:tcp_md5
+				--lua-desync=multisplit:pos=method+2
+
+				--new
+				--filter-tcp=443,2053,2083,2087,2096,8443
+				--filter-l7=tls <HOSTLIST>
+				--payload=tls_client_hello
+				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tcp_ts=-1000:repeats=6
+
+				--new
+				--filter-udp=443
+				--filter-l7=quic <HOSTLIST_NOAUTO>
+				--payload=quic_initial
+				--lua-desync=fake:blob=blob_quic_initial_www_google_com:repeats=6
+
+				--new
+				--filter-udp=19294-19344,50000-65535
+				--filter-l7=discord,stun
+				--out-range=-n1
+				--payload=discord_ip_discovery,stun
+				--lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
 	return 0
 }
 

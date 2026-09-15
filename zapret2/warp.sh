@@ -48,11 +48,33 @@ warp_register() {
     mkdir -p "$WARP_DIR"
     _log "Регистрация нового бесплатного устройства в Cloudflare WARP..."
     
-    local priv pub
+    # 1. Автоматический генератор-зеркало (обходит блокировку api.cloudflareclient.com в РФ)
+    local resp
+    resp=$(curl -sL -m 8 "https://generator-config-warp.vercel.app/api/warp-data" 2>/dev/null)
+    local priv v4 v6
+    priv=$(printf '%s' "$resp" | sed -n 's/.*"privKey"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    v4=$(printf '%s' "$resp" | sed -n 's/.*"client_ipv4"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    v6=$(printf '%s' "$resp" | sed -n 's/.*"client_ipv6"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    
+    if [ -n "$priv" ] && [ -n "$v4" ]; then
+        cat > "$WARP_DEV" <<-EOF
+{
+  "private_key": "$priv",
+  "v4": "$v4",
+  "v6": "${v6:-2606:4700:110:801f:ef38:34a9:84bc:a5a0}"
+}
+EOF
+        chmod 600 "$WARP_DEV"
+        _log "Устройство успешно зарегистрировано автоматически! IP: $v4"
+        return 0
+    fi
+
+    # 2. Официальный API Cloudflare (резервный метод)
     priv=$(gen_private_key)
+    local pub
     pub=$(derive_public_key "$priv")
 
-    local json_req body resp
+    local json_req
     json_req="{\"key\":\"$pub\",\"install_id\":\"\",\"fcm_token\":\"\",\"tos\":\"$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')\",\"model\":\"OpenWrt\",\"type\":\"Android\",\"locale\":\"en_US\"}"
     
     resp=$(curl -s -m 15 -X POST -H "Content-Type: application/json; charset=UTF-8" \
@@ -60,18 +82,18 @@ warp_register() {
         -d "$json_req" \
         "https://api.cloudflareclient.com/v0a3118/reg" 2>/dev/null)
 
-    local dev_id token v4 v6
+    local dev_id token
     dev_id=$(printf '%s' "$resp" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
     token=$(printf '%s' "$resp" | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
     v4=$(printf '%s' "$resp" | sed -n 's/.*"v4"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
     v6=$(printf '%s' "$resp" | sed -n 's/.*"v6"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
-    if [ -z "$dev_id" ] || [ -z "$v4" ]; then
-        _log "ОШИБКА: Cloudflare API вернул неполный ответ: $resp"
+    if [ -z "$v4" ]; then
+        _log "ОШИБКА: Не удалось автоматически зарегистрировать устройство в WARP"
         return 1
     fi
 
-    cat > "$WARP_DEV" <<EOF
+    cat > "$WARP_DEV" <<-EOF
 {
   "device_id": "$dev_id",
   "token": "$token",
@@ -86,10 +108,54 @@ EOF
     return 0
 }
 
+# Import config from WARP Generator (warp-generation.github.io) or .conf file
+warp_import() {
+    local src="$1"
+    mkdir -p "$WARP_DIR"
+    
+    local priv="" v4="" v6="" ep=""
+    
+    if [ -f "$src" ]; then
+        # Parse standard WireGuard .conf file from warp-generation.github.io
+        priv=$(grep -iE '^[[:space:]]*PrivateKey' "$src" | cut -d= -f2 | tr -d ' \r\t')
+        local addrs
+        addrs=$(grep -iE '^[[:space:]]*Address' "$src" | cut -d= -f2 | tr -d ' \r\t')
+        v4=$(echo "$addrs" | tr ',' '\n' | grep -v ':' | head -n1 | cut -d/ -f1)
+        v6=$(echo "$addrs" | tr ',' '\n' | grep ':' | head -n1 | cut -d/ -f1)
+        ep=$(grep -iE '^[[:space:]]*Endpoint' "$src" | cut -d= -f2 | tr -d ' \r\t')
+    elif [ -n "$src" ] && [ -n "$2" ]; then
+        # Direct arguments: warp_import <private_key> <v4_ip> [v6_ip] [endpoint]
+        priv="$1"
+        v4="${2%/*}"
+        v6="${3%/*}"
+        ep="$4"
+    else
+        echo "Использование: $0 import </path/to/warp.conf> ИЛИ $0 import <private_key> <v4_ip> [v6_ip] [endpoint]"
+        return 1
+    fi
+    
+    if [ -z "$priv" ] || [ -z "$v4" ]; then
+        _log "ОШИБКА: Не удалось извлечь PrivateKey и Address"
+        return 1
+    fi
+    
+    cat > "$WARP_DEV" <<-EOF
+{
+  "private_key": "$priv",
+  "v4": "$v4",
+  "v6": "${v6:-2606:4700:110:801f:ef38:34a9:84bc:a5a0}"
+}
+EOF
+    chmod 600 "$WARP_DEV"
+    [ -n "$ep" ] && echo "$ep" > "$WARP_DIR/endpoint"
+    _log "Конфиг WARP успешно импортирован! IP: $v4"
+    return 0
+}
+
 # Scout alive, unblocked endpoint with lowest ping for gaming
 warp_scout() {
     _log "Поиск эндпоинта Cloudflare с наименьшим пингом (gaming latency scout)..."
-    local candidates="162.159.192.1 162.159.192.2 162.159.193.1 162.159.193.5 162.159.195.1 188.114.96.1 188.114.97.1 162.159.192.10"
+    local candidates="8.34.70.1 8.34.70.2 8.34.70.3 8.34.70.4 8.34.70.10 162.159.192.1 162.159.192.2 162.159.193.1 162.159.193.5 162.159.195.1 188.114.96.1 188.114.97.1 162.159.192.10"
     if [ -s "$ENDPOINTS_FILE" ]; then
         candidates="$(grep -vE '^[[:space:]]*(#|$)' "$ENDPOINTS_FILE" | cut -d: -f1 | head -n 30) $candidates"
     fi
@@ -97,6 +163,7 @@ warp_scout() {
     local best_ip=""
     local best_ping=999999
     local best_port=2408
+    local results=""
 
     for ip in $candidates; do
         local ping_out rtt
@@ -105,6 +172,7 @@ warp_scout() {
         
         if [ -n "$rtt" ] && [ "$rtt" -gt 0 ]; then
             _log "Кандидат $ip -> пинг ${rtt}ms"
+            results="${results}${rtt}ms $ip\n"
             if [ "$rtt" -lt "$best_ping" ]; then
                 best_ping=$rtt
                 best_ip=$ip
@@ -118,7 +186,7 @@ warp_scout() {
         best_ep="$best_ip:$best_port"
         _log "Выбран наилучший игровой эндпоинт: $best_ep (минимальный пинг: ${best_ping}ms)"
     else
-        best_ep="162.159.192.1:2408"
+        best_ep="8.34.70.2:2408"
         _log "ICMP пинг не ответил, использован проверенный эндпоинт: $best_ep"
     fi
 
@@ -132,7 +200,9 @@ warp_scout() {
         ifup warp 2>/dev/null || true
     fi
 
-    echo "$best_ep (ping: ${best_ping}ms)"
+    echo "--- Топ эндпоинтов по пингу ---"
+    printf "$results" | sort -n | head -n 5
+    echo "Лучший эндпоинт: $best_ep (${best_ping}ms)"
 }
 
 # Configure OpenWrt interface 'warp'
@@ -273,6 +343,7 @@ warp_status() {
 
 case "$1" in
     register) warp_register ;;
+    import)   shift; warp_import "$@" ;;
     scout)    warp_scout ;;
     up)       warp_up ;;
     down)     warp_down ;;
@@ -280,5 +351,5 @@ case "$1" in
     pbr_down) warp_pbr_down ;;
     status)   warp_status ;;
     restart)  warp_down; warp_up ;;
-    *) echo "usage: $0 {register|scout|up|down|restart|status}" >&2; exit 1 ;;
+    *) echo "usage: $0 {register|import|scout|up|down|restart|status}" >&2; exit 1 ;;
 esac
