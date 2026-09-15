@@ -541,7 +541,8 @@ function set_cfg_default_values
 	local opt_strat=${2:-default}
 	local cfgname=${3:-$ZAPRET_CFG_NAME}
 
-	if ! echo "$opt_flags" | grep -q "(skip_base)"; then
+	local ws_user="$( uci -q get $cfgname.config.WS_USER )"
+	if ! echo "$opt_flags" | grep -q "(skip_base)" || [ -z "$ws_user" ]; then
 		set_cfg_reset_values $cfgname
 	fi
 	if [ "$opt_strat" != "-" ]; then

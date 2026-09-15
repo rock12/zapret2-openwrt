@@ -139,9 +139,12 @@ function create_default_cfg
 	local opt_strat=$2
 	local cfgname=${3:-$ZAPRET_CFG_NAME}
 	local cfgfile=/etc/config/$cfgname
-	rm -f $cfgfile
-	touch $cfgfile
-	uci set $cfgname.config=main
+	if ! echo "$opt_flags" | grep -q "(skip_base)"; then
+		rm -f $cfgfile
+		touch $cfgfile
+		uci set $cfgname.config=main
+	fi
+	[ ! -f "$cfgfile" ] && touch "$cfgfile" && uci set $cfgname.config=main
 	set_cfg_default_values "$opt_flags" "$opt_strat" $cfgname
 	return 0
 }
