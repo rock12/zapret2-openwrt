@@ -1,0 +1,218 @@
+name: build
+
+on:
+  push:
+    branches: [zap1]
+    paths:
+      - 'zapret2/**'
+      - 'luci-app-zapret2/**'
+      - '.github/**'
+  workflow_dispatch:
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag:     ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        name: Read package version
+        run: |
+          VERSION=$(grep -E '^PKG_VERSION' zapret2/Makefile | head -1 | cut -d: -f2 | tr -d '= ')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"    >> "$GITHUB_OUTPUT"
+          echo "zapret2 version: $VERSION"
+
+  build:
+    needs: meta
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - bin_subdir: linux-arm64
+            openwrt_arches: aarch64_cortex-a53 aarch64_cortex-a72 aarch64_cortex-a76 aarch64_generic
+          - bin_subdir: linux-arm
+            openwrt_arches: arm_cortex-a5 arm_cortex-a5_vfpv4 arm_cortex-a7 arm_cortex-a7_neon-vfpv4 arm_cortex-a7_vfpv4 arm_cortex-a8 arm_cortex-a8_vfpv3 arm_cortex-a9 arm_cortex-a9_neon arm_cortex-a9_vfpv3-d16 arm_cortex-a15_neon-vfpv4 arm_arm1176jzf-s_vfp arm_arm926ej-s arm_fa526 arm_mpcore arm_xscale
+          - bin_subdir: linux-mips
+            openwrt_arches: mips_24kc mips_4kec mips_mips32
+          - bin_subdir: linux-mipsel
+            openwrt_arches: mipsel_24kc mipsel_24kc_24kf mipsel_74kc mipsel_mips32
+          - bin_subdir: linux-mips64
+            openwrt_arches: mips64_octeonplus
+          - bin_subdir: linux-x86_64
+            openwrt_arches: x86_64
+          - bin_subdir: linux-x86
+            openwrt_arches: i386_pentium4 i386_pentium-mmx x86_geode
+          - bin_subdir: linux-riscv64
+            openwrt_arches: riscv64_riscv64
+          - bin_subdir: linux-ppc
+            openwrt_arches: powerpc_8540 powerpc_464fp
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup packaging tools (apk-tools + ipkg-build)
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt-get update -qq
+          sudo -E apt-get install -y build-essential fakeroot libssl-dev meson ninja-build
+          git clone https://git.alpinelinux.org/apk-tools apk-tools-src
+          pushd apk-tools-src
+          git checkout b5a31c0d865342ad80be10d68f1bb3d3ad9b0866
+          meson setup build \
+            -Db_lto=true -Dcompressed-help=false -Ddocs=disabled -Dhelp=disabled \
+            -Dlua_version=disabled -Ddefault_library=static -Durl_backend=wget \
+            -Dzstd=false -Dpython=disabled -Dtests=disabled -Dcrypto_backend=openssl
+          ninja -C build
+          sudo meson install -C build --strip
+          popd
+          curl -fsSL "https://raw.githubusercontent.com/openwrt/openwrt/master/scripts/ipkg-build" \
+            | sudo tee /usr/local/bin/ipkg-build > /dev/null
+          sudo chmod +x /usr/local/bin/ipkg-build
+
+      - name: Download prebuilt zapret2 binaries
+        run: |
+          TAG="${{ needs.meta.outputs.tag }}"
+          wget -q "https://github.com/bol-van/zapret2/releases/download/${TAG}/zapret2-${TAG}-openwrt-embedded.tar.gz" -O emb.tar.gz
+          mkdir -p emb
+          tar xzf emb.tar.gz -C emb --strip-components=1
+
+      - name: Setup APK signing key
+        # Optional: add SIGN_PRIVATE_KEY to repo secrets to sign APKs. It must be an
+        # openssl PEM PRIVATE key (RSA recommended), raw or base64-encoded — NOT a
+        # usign key. Unsigned packages still install fine. The matching public key is
+        # derived and published to the release by the `release` job.
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.SIGN_PRIVATE_KEY }}
+        run: |
+          [ -z "$SIGN_PRIVATE_KEY" ] && exit 0
+          printf '%s\n' "$SIGN_PRIVATE_KEY" > /tmp/sign.raw
+          if openssl pkey -in /tmp/sign.raw -noout 2>/dev/null; then
+            cp /tmp/sign.raw /tmp/sign.key
+          elif base64 -d /tmp/sign.raw > /tmp/sign.dec 2>/dev/null && openssl pkey -in /tmp/sign.dec -noout 2>/dev/null; then
+            cp /tmp/sign.dec /tmp/sign.key
+          else
+            echo "::error::SIGN_PRIVATE_KEY is not a valid PEM private key (raw or base64). Generate one with: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out priv.pem"
+            exit 1
+          fi
+          chmod 600 /tmp/sign.key
+          echo "APK_SIGN_KEY=/tmp/sign.key" >> "$GITHUB_ENV"
+
+      - name: Build packages
+        run: |
+          bash .github/build-zapret2.sh \
+            "${{ needs.meta.outputs.version }}" \
+            "$PWD/emb" \
+            "${{ matrix.bin_subdir }}" \
+            "${{ matrix.openwrt_arches }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pkgs-${{ matrix.bin_subdir }}
+          path: .github/out/
+          if-no-files-found: error
+
+  luci:
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup packaging tools (apk-tools + ipkg-build)
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt-get update -qq
+          sudo -E apt-get install -y build-essential fakeroot libssl-dev meson ninja-build
+          git clone https://git.alpinelinux.org/apk-tools apk-tools-src
+          pushd apk-tools-src
+          git checkout b5a31c0d865342ad80be10d68f1bb3d3ad9b0866
+          meson setup build \
+            -Db_lto=true -Dcompressed-help=false -Ddocs=disabled -Dhelp=disabled \
+            -Dlua_version=disabled -Ddefault_library=static -Durl_backend=wget \
+            -Dzstd=false -Dpython=disabled -Dtests=disabled -Dcrypto_backend=openssl
+          ninja -C build
+          sudo meson install -C build --strip
+          popd
+          curl -fsSL "https://raw.githubusercontent.com/openwrt/openwrt/master/scripts/ipkg-build" \
+            | sudo tee /usr/local/bin/ipkg-build > /dev/null
+          sudo chmod +x /usr/local/bin/ipkg-build
+      - name: Setup APK signing key
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.SIGN_PRIVATE_KEY }}
+        run: |
+          [ -z "$SIGN_PRIVATE_KEY" ] && exit 0
+          printf '%s\n' "$SIGN_PRIVATE_KEY" > /tmp/sign.raw
+          if openssl pkey -in /tmp/sign.raw -noout 2>/dev/null; then
+            cp /tmp/sign.raw /tmp/sign.key
+          elif base64 -d /tmp/sign.raw > /tmp/sign.dec 2>/dev/null && openssl pkey -in /tmp/sign.dec -noout 2>/dev/null; then
+            cp /tmp/sign.dec /tmp/sign.key
+          else
+            echo "::error::SIGN_PRIVATE_KEY is not a valid PEM private key (raw or base64)"
+            exit 1
+          fi
+          chmod 600 /tmp/sign.key
+          echo "APK_SIGN_KEY=/tmp/sign.key" >> "$GITHUB_ENV"
+      - name: Build luci-app-zapret2 (noarch)
+        run: bash .github/build-luci-zapret2.sh "${{ needs.meta.outputs.version }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pkgs-luci
+          path: .github/out/
+          if-no-files-found: error
+
+  release:
+    needs: [meta, build, luci]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: pkgs-*
+          merge-multiple: true
+          path: packages/
+      - name: Publish public signing key
+        # Derive the public key from the private signing key and ship it so users can
+        # trust the signed .apk files. apk matches keys by pubkey hash, not filename,
+        # so the file just needs to land in /etc/apk/keys/ on the client.
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.SIGN_PRIVATE_KEY }}
+        run: |
+          [ -z "$SIGN_PRIVATE_KEY" ] && { echo "No signing key — packages are unsigned, no .pub to publish."; exit 0; }
+          printf '%s\n' "$SIGN_PRIVATE_KEY" > /tmp/sign.raw
+          openssl pkey -in /tmp/sign.raw -noout 2>/dev/null || { base64 -d /tmp/sign.raw > /tmp/sign.dec 2>/dev/null && mv /tmp/sign.dec /tmp/sign.raw; }
+          openssl pkey -in /tmp/sign.raw -pubout -out packages/zapret2-dushnilin.pub
+          echo "Published public key:"; cat packages/zapret2-dushnilin.pub
+
+      - name: List assets
+        run: ls -lh packages/
+      - name: Create release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.meta.outputs.tag }}
+          name: ${{ needs.meta.outputs.tag }}
+          body: |
+            ### zapret2 ${{ needs.meta.outputs.tag }}
+
+            Prebuilt zapret2 (nfqws2) packages for OpenWrt, repackaged from
+            [bol-van/zapret2](https://github.com/bol-van/zapret2) static binaries.
+
+            Check your device architecture:
+            ```
+            . /etc/openwrt_release && echo "$DISTRIB_ARCH"
+            ```
+
+            Install the matching `zapret2_*` package (`.apk` on apk systems,
+            `.ipk` on opkg) plus the noarch `luci-app-zapret2` for the LuCI UI.
+
+            **Signed APKs:** to trust them, drop `zapret2-dushnilin.pub` into
+            `/etc/apk/keys/` on the router. Unsigned installs still work with
+            `apk add --allow-untrusted`.
+          files: |
+            packages/*.ipk
+            packages/*.apk
+            packages/*.pub
