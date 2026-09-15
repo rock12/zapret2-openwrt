@@ -188,6 +188,7 @@ EOF
         $NFQWS2_BIN --user=daemon --qnum="$TEST_QNUM" --fwmark="$TEST_MARK" \
             "--lua-init=@$ZAPRET_BASE/lua/zapret-lib.lua" \
             "--lua-init=@$ZAPRET_BASE/lua/zapret-antidpi.lua" \
+            "--lua-init=@$ZAPRET_BASE/lua/zapret-auto.lua" \
             $c_args >/tmp/zapret2_autotune_engine.log 2>&1 &
         ENGINE_PID=$!
 
