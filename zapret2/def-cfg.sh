@@ -1399,7 +1399,6 @@ function set_cfg_nfqws_strat
 				--blob=tls_magnit:@/opt/zapret2/files/fake/tls_magnit.bin
 				--blob=stun2_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_magnit:repeats=4:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.microsoft.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
