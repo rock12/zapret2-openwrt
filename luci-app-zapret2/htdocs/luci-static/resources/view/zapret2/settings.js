@@ -520,18 +520,28 @@ return view.extend({
         o.inputstyle = 'btn cbi-button-action';
         o.description = _('Register free Cloudflare WARP device account directly (no card or purchase required)');
         o.onclick = () => {
+            ui.addNotification(null, E('p', _('Registering free WARP account, please wait...')));
             return fs.exec('/opt/zapret2/warp.sh', [ 'register' ]).then(res => {
-                ui.addNotification(null, E('p', (res.code == 0) ? _('WARP account registered successfully!') : _('WARP registration error: ') + (res.stdout || '') + (res.stderr || '')));
+                if (res.code == 0) {
+                    ui.addNotification(null, E('p', _('WARP device account registered successfully!')));
+                } else {
+                    ui.addNotification(null, E('p', _('WARP registration error: ') + (res.stdout || '') + (res.stderr || '')));
+                }
             });
         };
 
         o = s.taboption(tabname, form.Button, '_warp_scout_btn', _('WARP Scout (Find Alive Endpoint)'));
         o.inputtitle = _('Scout Endpoint');
         o.inputstyle = 'btn cbi-button-action';
-        o.description = _('Scans for unblocked Cloudflare IP endpoints');
+        o.description = _('Scans for unblocked Cloudflare IP endpoints with lowest latency');
         o.onclick = () => {
+            ui.addNotification(null, E('p', _('Scouting endpoints for gaming latency, please wait...')));
             return fs.exec('/opt/zapret2/warp.sh', [ 'scout' ]).then(res => {
-                ui.addNotification(null, E('p', _('Active Endpoint: ') + (res.stdout || '')));
+                if (res.code == 0 && res.stdout) {
+                    ui.addNotification(null, E('pre', { 'style': 'font-family: monospace; white-space: pre-wrap;' }, res.stdout));
+                } else {
+                    ui.addNotification(null, E('p', _('Scout error: ') + (res.stderr || res.stdout || '')));
+                }
             });
         };
 
@@ -540,8 +550,13 @@ return view.extend({
         o.inputstyle = 'btn';
         o.description = _('Fetches the latest gaming IP ranges and Telegram IP ranges');
         o.onclick = () => {
+            ui.addNotification(null, E('p', _('Updating gaming and Telegram IP lists...')));
             return fs.exec('/opt/zapret2/update-lists.sh', [ 'all' ]).then(res => {
-                ui.addNotification(null, E('p', _('Lists updated successfully!')));
+                if (res.code == 0) {
+                    ui.addNotification(null, E('p', _('Lists updated successfully!')));
+                } else {
+                    ui.addNotification(null, E('p', _('List update error: ') + (res.stderr || res.stdout || '')));
+                }
             });
         };
 
