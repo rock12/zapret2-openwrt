@@ -201,10 +201,11 @@ function init_before_start
 {
 	local daemon_log_enable=$1
 	local daemon_log_size_max=${2:-2000}
+	[ -x "$ZAPRET_BASE/sync_config.sh" ] && "$ZAPRET_BASE/sync_config.sh"
 	local HOSTLIST_FN="$ZAPRET_BASE/ipset/zapret-hosts-user.txt"
 	[ ! -f "$HOSTLIST_FN" ] && touch "$HOSTLIST_FN"
-	chmod 644 $ZAPRET_BASE/ipset/*.txt
-	chmod 666 $ZAPRET_BASE/ipset/*.log
+	chmod 644 $ZAPRET_BASE/ipset/*.txt 2>/dev/null || true
+	chmod 666 $ZAPRET_BASE/ipset/*.log 2>/dev/null || true
 	rm -f $ZAPRET_BASE/init.d/openwrt/custom.d/*-opkg*
 	rm -f $ZAPRET_BASE/init.d/openwrt/custom.d/*.opkg*
 	rm -f $ZAPRET_BASE/init.d/openwrt/custom.d/*.apk*

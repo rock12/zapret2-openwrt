@@ -333,7 +333,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
 				
-				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 
 				--filter-tcp=80
@@ -346,8 +345,7 @@ function set_cfg_nfqws_strat
 				--filter-tcp=443
 				--filter-l7=tls <HOSTLIST>
 				--payload=tls_client_hello
-				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000
-				--lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=blob_tls_clienthello_www_google_com:tcp_ts_up
+				--lua-desync=multisplit:pos=1,midsld:seqovl=1
 
 				--new
 				--filter-udp=443
@@ -372,7 +370,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
 				
-				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 
 				--filter-tcp=80
@@ -382,18 +379,10 @@ function set_cfg_nfqws_strat
 				--lua-desync=multisplit:pos=method+2
 
 				--new
-				--filter-tcp=443
+				--filter-tcp=443,2053,2083,2087,2096,8443
 				--filter-l7=tls <HOSTLIST>
 				--payload=tls_client_hello
-				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000
-				--lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=blob_tls_clienthello_www_google_com:tcp_ts_up
-
-				--new
-				--filter-tcp=2053,2083,2087,2096,8443
-				--filter-l7=tls <HOSTLIST>
-				--payload=tls_client_hello
-				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000
-				--lua-desync=multidisorder:pos=1,midsld
+				--lua-desync=multisplit:pos=1,midsld:seqovl=1
 
 				--new
 				--filter-udp=443
@@ -528,6 +517,146 @@ function set_cfg_nfqws_strat
 				--out-range=-n1
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_01" -o "$strat" = "z2-ready-01" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000 --lua-desync=multidisorder:pos=1,midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_02" -o "$strat" = "z2-ready-02" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid,sni=www.google.com --lua-desync=multidisorder:pos=1,midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_03" -o "$strat" = "z2-ready-03" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000:repeats=6 --lua-desync=multisplit:pos=1,midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=send:ipfrag --lua-desync=drop
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_04" -o "$strat" = "z2-ready-04" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=6 --lua-desync=multisplit:pos=2,midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_05" -o "$strat" = "z2-ready-05" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=1
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_06" -o "$strat" = "z2-ready-06" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=send:ipfrag --lua-desync=drop
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_07" -o "$strat" = "z2-ready-07" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=tcpseg:pos=0,-1:seqovl=1 --lua-desync=drop
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_08" -o "$strat" = "z2-ready-08" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=wssize:wsize=1:scale=6 --lua-desync=multidisorder:pos=1,midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=6
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_09" -o "$strat" = "z2-ready-09" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid --lua-desync=multisplit:pos=2,midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
+			"
+			commit $cfgname
+		EOF
+	fi
+	if [ "$strat" = "z2_ready_10" -o "$strat" = "z2-ready-10" ]; then
+		uci batch <<-EOF
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
+			set $cfgname.config.NFQWS2_OPT="
+				--comment=Strategy__$strat
+				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000:repeats=6 --lua-desync=multidisorder:pos=midsld
+				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=send:ipfrag --lua-desync=drop
+				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
 			"
 			commit $cfgname
 		EOF

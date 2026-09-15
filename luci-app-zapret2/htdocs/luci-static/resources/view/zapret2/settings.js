@@ -275,13 +275,23 @@ return view.extend({
         add_delim(s);
 
         o = s.taboption(tabname, form.ListValue, '_strat_selector', _('Preset Strategy / Auto-Rotation'));
-        o.description = _('Select an anti-DPI strategy preset. "⚡ Z2K Auto-Rotation" automatically detects blocking and rotates strategies in a circle.');
+        o.description = _('Select an anti-DPI strategy preset. "z2-ready-05" is verified to fix YouTube 4K and Discord without TLS protocol errors.');
         o.value('-', _('-- Select Strategy Preset to Apply --'));
-        o.value('z2k_autocircular', '⚡ ' + _('Z2K Auto-Rotation (Автоподбор стратегий при сбоях)'));
+        o.value('z2_ready_05', '⚡ ' + _('z2-ready-05 (Multisplit sequence overlap - Fix YouTube & Discord)'));
         o.value('flowseal_general', '🔥 ' + _('Flowseal Classic (YouTube 4K + Discord Voice)'));
+        o.value('youtube_discord_ultimate', '🎯 ' + _('YouTube & Discord Ultimate'));
+        o.value('z2_ready_06', '🛡️ ' + _('z2-ready-06 (Multidisorder SNI split)'));
+        o.value('z2_ready_01', '⚙️ ' + _('z2-ready-01 (Default fake + disorder)'));
+        o.value('z2_ready_02', '⚙️ ' + _('z2-ready-02 (Google TLS fake + disorder)'));
+        o.value('z2_ready_03', '⚙️ ' + _('z2-ready-03 (Timestamp fake + multisplit)'));
+        o.value('z2_ready_04', '⚙️ ' + _('z2-ready-04 (MD5 fake + multisplit)'));
+        o.value('z2_ready_07', '⚙️ ' + _('z2-ready-07 (TCP segment overlap + drop)'));
+        o.value('z2_ready_08', '⚙️ ' + _('z2-ready-08 (Window size + disorder)'));
+        o.value('z2_ready_09', '⚙️ ' + _('z2-ready-09 (Repeated fake + multisplit)'));
+        o.value('z2_ready_10', '⚙️ ' + _('z2-ready-10 (Repeated fake + multidisorder)'));
         o.value('flowseal_fake_tls_auto', '🚀 ' + _('Flowseal Fake TLS Auto (YouTube + Discord + General)'));
         o.value('flowseal_simple_fake', '🍃 ' + _('Flowseal Simple Fake (Low CPU)'));
-        o.value('youtube_discord_ultimate', '🎯 ' + _('YouTube & Discord Ultimate'));
+        o.value('z2k_autocircular', '⚡ ' + _('Z2K Auto-Rotation (Автоподбор стратегий при сбоях)'));
         o.value('remittor_168', '🛡️ ' + _('Remittor #168 (with DoT DNS TCP 853)'));
         o.value('v1_by_Schiz23', 'v1 by Schiz23');
         o.value('v2_by_Schiz23', 'v2 by Schiz23');
@@ -310,6 +320,59 @@ return view.extend({
                     ui.addNotification(null, E('p', _('Failed to apply strategy: ') + (res.stderr || res.stdout || '')));
                 }
             });
+        };
+
+        let btn_autotune = s.taboption(tabname, form.Button, '_autotune_btn', _('Auto-Tune (Автоподбор стратегий)'));
+        btn_autotune.inputtitle = '⚡ ' + _('Запустить автоподбор стратегии');
+        btn_autotune.inputstyle = 'btn cbi-button-apply';
+        btn_autotune.description = _('Автоматически тестирует проверенные профили на YouTube, Discord и заблокированных сервисах и применяет наилучшую рабочую стратегию.');
+        btn_autotune.onclick = () => {
+            ui.showModal(_('Автоподбор стратегий Zapret2'), [
+                E('p', { class: 'spinning' }, _('Запуск тестирования... Проверка доступности сервисов и подбор лучшей стратегии.')),
+                E('pre', { id: 'autotune-log-box', style: 'max-height: 280px; overflow-y: auto; background: #1a1a1a; color: #33ff33; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;' }, _('Подготовка изолированного тестового окружения...')),
+                E('div', { class: 'right', style: 'margin-top: 15px;' }, [
+                    E('button', {
+                        class: 'btn',
+                        id: 'autotune-close-btn',
+                        disabled: true,
+                        click: () => location.reload()
+                    }, _('Закрыть'))
+                ])
+            ]);
+
+            fs.exec('/opt/zapret2/autotune.sh', [ 'auto' ]);
+
+            let pollInterval = setInterval(() => {
+                fs.read('/tmp/zapret2_autotune.log').then(content => {
+                    let box = document.getElementById('autotune-log-box');
+                    if (box && content) {
+                        box.textContent = content;
+                        box.scrollTop = box.scrollHeight;
+                    }
+                });
+
+                fs.exec('/opt/zapret2/autotune.sh', [ 'status' ]).then(res => {
+                    if (res && res.stdout) {
+                        try {
+                            let st = JSON.parse(res.stdout);
+                            if (st && st.running === false) {
+                                clearInterval(pollInterval);
+                                let closeBtn = document.getElementById('autotune-close-btn');
+                                if (closeBtn) {
+                                    closeBtn.disabled = false;
+                                    closeBtn.className = 'btn cbi-button-action';
+                                    closeBtn.textContent = _('Применить и обновить страницу');
+                                }
+                                if (st.best) {
+                                    ui.addNotification(null, E('p', _('Автоподбор завершен! Победитель: %s. Стратегия успешно применена.').format(st.best.title)));
+                                } else {
+                                    ui.addNotification(null, E('p', _('Автоподбор завершен, рабочая стратегия не найдена.')));
+                                }
+                            }
+                        } catch (e) {}
+                    }
+                });
+            }, 1200);
         };
 
         add_delim(s, tools.nfqws_opt_url);
