@@ -28,17 +28,16 @@ log() {
 }
 
 cleanup() {
+    [ "$FINISHED_CLEANLY" = "1" ] && return
     log "Очистка тестового окружения..."
     [ -n "$ENGINE_PID" ] && kill "$ENGINE_PID" 2>/dev/null || true
     nft delete table inet "$NFT_TABLE" 2>/dev/null || true
     rm -f "$PID_FILE"
-    if [ "$FINISHED_CLEANLY" != "1" ] && [ "$WAS_RUNNING" = "1" ]; then
+    if [ "$WAS_RUNNING" = "1" ]; then
         log "Восстановление службы Zapret2..."
         /etc/init.d/zapret2 start 2>/dev/null || true
     fi
 }
-
-trap cleanup INT TERM EXIT
 
 resolve_ip() {
     local host="$1"
@@ -74,6 +73,7 @@ check_target() {
 run_autotune() {
     local mode="${1:-auto}" # auto | test
     FINISHED_CLEANLY=0
+    trap cleanup INT TERM EXIT
     echo $$ > "$PID_FILE"
     : > "$LOG_FILE"
 
@@ -126,23 +126,35 @@ EOF
 
     # Список кандидатов из каталога Hellington-Rey + Flowseal + Zapret-Manager
     CANDIDATES="
+zm_alt|Zapret-Manager ALT (Fake + Fakedsplit ts)|--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fakedsplit:pattern=0x00:repeats=6:tcp_ts=-600000:tcp_ts_up
+zm_alt2|Zapret-Manager ALT2 (Multisplit seqovl=652 pos=2)|--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google
+zm_alt3|Zapret-Manager ALT3 (Fake ya.ru + Hostfakesplit ts)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=ya.ru:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=ya.ru:tcp_ts=-600000:tcp_ts_up
+zm_alt4|Zapret-Manager ALT4 (Fake badseq 1000 + Multisplit)|--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit
+zm_alt5|Zapret-Manager ALT5 (Syndata + Multidisorder)|--filter-l3=ipv4 --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=syndata --lua-desync=multidisorder
+zm_alt6|Zapret-Manager ALT6 (Multisplit seqovl=681 pos=1)|--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
+zm_alt7|Zapret-Manager ALT7 (Multisplit pos=2,sniext+1 seqovl=679)|--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google
+zm_alt8|Zapret-Manager ALT8 (Fake badseq +2)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
+zm_alt9|Zapret-Manager ALT9 (Hostfakesplit ts+md5sig)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=hostfakesplit:tcp_md5:tcp_ts=-600000:tcp_ts_up
+zm_alt10|Zapret-Manager ALT10 (Fake 4pda ts)|--blob=tls_4pda:@/opt/zapret2/files/fake/tls_clienthello_4pda_to.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=tls_4pda:repeats=6:tcp_ts=-600000:tcp_ts_up
+zm_alt11|Zapret-Manager ALT11 (Fake stun2 + Multisplit seqovl=664)|--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max
+zm_alt12|Zapret-Manager ALT12 (ALT11 + Google Hostfakesplit)|--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max
+zm_alt13|Zapret-Manager ALT13 (Fake + Hostfakesplit mail.ru ts)|--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
+zm_exp|Zapret-Manager EXP (Fake + Multisplit seqovl=480 stun2)|--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=480:seqovl_pattern=stun_fake
+zm_fake_tls_auto|Zapret-Manager FAKE TLS AUTO (Fake + Multidisorder 1,midsld)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=multidisorder:pos=1,midsld
+zm_fake_tls_auto_alt|Zapret-Manager FAKE TLS AUTO ALT (Fake + Fakedsplit pos=1)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=fakedsplit:pos=1
+zm_fake_tls_auto_alt2|Zapret-Manager FAKE TLS AUTO ALT2 (Fake + Multisplit badseq)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit
+zm_simple_fake|Zapret-Manager SIMPLE FAKE (Fake Google + ts)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=6:tcp_ts=-600000:tcp_ts_up
+zm_simple_fake_alt|Zapret-Manager SIMPLE FAKE ALT (Fake badseq +2)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
+zm_martin_backer|Zapret-Manager MartinBacker (Circular Multi-strategy)|--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --in-range=-s5556 --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --in-range=x --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_seq=10000:strategy=1 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=1 --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tls_mod=rnd,dupsid,sni=www.google.com:repeats=2:strategy=2 --lua-desync=multisplit:pos=1,midsld:strategy=2
+zm_krushaaa|Zapret-Manager Krushaaa (BurgerKing + Magnit + ts)|--blob=tls_burger:@/opt/zapret2/files/fake/tls_burgerkingrus_ru.bin --blob=stun2_fake:@/opt/zapret2/files/fake/stun2.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun2_fake:repeats=4:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_burger:repeats=4:tcp_ts=-600000:tcp_ts_up
+zm_uvvi2|Zapret-Manager Uvvi2 (Targeted Voice + Circular)|--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_seq=10000:strategy=1 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=1
 z2_ready_05|Multisplit sequence overlap (HR #5 / Flowseal)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=1
-zm_yv01|Zapret-Manager Yv01 (Google TLS Fake + Multisplit seqovl=681)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --ip-id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=blob_tls_clienthello_www_google_com
-zm_yv02|Zapret-Manager Yv02 (Multisplit pos=1,sniext+1 seqovl=1)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,sniext+1:seqovl=1
-zm_yv08|Zapret-Manager Yv08 (Hostfakesplit google.com tcp_ts=-600000)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=hostfakesplit:host=google.com:tcp_ts=-600000
-zm_yv24|Zapret-Manager Yv24 (STUN Fake badsum + Multisplit seqovl=654)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=blob_stun:tcp_seq=-10000:badsum:repeats=8 --lua-desync=multisplit:pos=1:seqovl=654:seqovl_pattern=blob_stun
 z2_ready_06|Multidisorder SNI split (HR #6)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1
-z2_ready_01|Default fake + disorder (HR #1)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000 --lua-desync=multidisorder:pos=1,midsld
 z2_ready_03|Timestamp fake + multisplit (HR #3)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000:repeats=6 --lua-desync=multisplit:pos=1,midsld
-z2_ready_04|MD5 fake + multisplit (HR #4)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=6 --lua-desync=multisplit:pos=2,midsld
-z2_ready_08|Window size + disorder (HR #8)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=wssize:wsize=1:scale=6 --lua-desync=multidisorder:pos=1,midsld
-z2_ready_09|Repeated fake + multisplit (HR #9)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:repeats=11:tls_mod=rnd,dupsid --lua-desync=multisplit:pos=2,midsld
-z2_ready_10|Repeated fake + multidisorder (HR #10)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000:repeats=6 --lua-desync=multidisorder:pos=midsld
-flowseal_simple_fake|Flowseal Simple Fake|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000:repeats=6
 "
 
     INDEX=0
-    TOTAL=13
+    TOTAL=$(echo "$CANDIDATES" | grep -c '|')
     rm -f "/tmp/zapret2_autotune_res.tmp"
 
     echo "$CANDIDATES" | while IFS='|' read -r c_id c_title c_args; do

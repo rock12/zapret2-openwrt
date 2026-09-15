@@ -23,7 +23,8 @@
 				"/opt/zapret2/sync_config.sh*": [ "exec" ],
 				"/opt/zapret2/warp.sh*": [ "exec" ],
 				"/opt/zapret2/update-lists.sh*": [ "exec" ],
-				"/opt/zapret2/autotune.sh*": [ "exec" ]
+				"/opt/zapret2/autotune.sh*": [ "exec" ],
+				"/opt/zapret2/tg_proxy.sh*": [ "exec" ]
 			},
 			"uci": [ "zapret2", "network", "firewall" ],
 			"ubus": {
