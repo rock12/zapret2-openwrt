@@ -782,14 +782,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -801,7 +799,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=fakedsplit:pattern=0x00:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up
@@ -810,16 +807,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=fakedsplit:pattern=0x00:repeats=6:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -832,7 +825,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n3 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=12
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -844,12 +836,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt2
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -859,22 +849,17 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google
 				--payload=http_req
 				--lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -896,12 +881,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt3
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -913,7 +896,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=ya.ru:tcp_ts=-600000:tcp_ts_up
@@ -921,16 +903,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=hostfakesplit:host=ya.ru:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -942,7 +920,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n4 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -954,14 +931,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt4
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -973,7 +948,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=multisplit:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up
@@ -982,16 +956,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=multisplit
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1004,7 +974,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1016,7 +985,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt4_mod_maximusng
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
@@ -1024,13 +992,11 @@ function set_cfg_nfqws_strat
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=multisplit
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up
@@ -1039,16 +1005,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tc
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1061,7 +1023,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1073,30 +1034,23 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt5
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-l3=ipv4 --filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls,http
 				--payload=tls_client_hello,http_req
 				--lua-desync=syndata
 				--lua-desync=multidisorder
-				--new
 				--filter-l3=ipv4 --filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=syndata
 				--lua-desync=multidisorder
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1119,12 +1073,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt6
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1134,22 +1086,17 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--payload=http_req
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1171,12 +1118,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt7
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1186,22 +1131,17 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google
 				--payload=http_req
 				--lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1223,12 +1163,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt8
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1238,22 +1176,17 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:repeats=6:ip_id=zero:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1265,7 +1198,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=12
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1277,11 +1209,9 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt9
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1291,22 +1221,17 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=www.google.com:repeats=4:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=ozon.ru:repeats=4:tcp_ts=-600000:tcp_md5:tcp_ts_up
 				--payload=http_req
 				--lua-desync=hostfakesplit:host=ozon.ru:repeats=4:tcp_ts=-600000:tcp_md5:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1328,7 +1253,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt10
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_4pda:@/opt/zapret2/files/fake/tls_clienthello_4pda_to.bin
@@ -1336,7 +1260,6 @@ function set_cfg_nfqws_strat
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1346,23 +1269,18 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=fake:blob=tls_4pda:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1375,7 +1293,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=12
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1387,14 +1304,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt11
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1406,7 +1321,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up
@@ -1415,16 +1329,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1437,7 +1347,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n4 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1449,14 +1358,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt12
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1467,7 +1374,6 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up
@@ -1476,19 +1382,15 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery
 				--lua-desync=fake:blob=stun_fake:repeats=3
 				--lua-desync=fake:blob=discord_udp:repeats=3
 				--payload=stun
 				--lua-desync=fake:blob=discord_udp:repeats=3
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1501,7 +1403,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n4 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1513,14 +1414,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_alt13
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_sochi:@/opt/zapret2/files/fake/tls_clienthello_sochi_park.bin
 				--blob=stun2_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media --payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=7:tcp_ts=-600000:tcp_ts_up
@@ -1529,7 +1428,6 @@ function set_cfg_nfqws_strat
 				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=www.google.com:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up
@@ -1538,25 +1436,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic --payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=5
-				--new
-				--new
-				--filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442
-				--out-range=<n4
-				--payload=known,unknown
-				--lua-desync=fake:blob=stun2_fake:repeats=8:tcp_ts=-600000:payload=known,unknown
-				--lua-desync=multisplit:pos=1:seqovl=664:payload=known,unknown
-				--new
-				--filter-udp=88,1024-2407,2409-4499,4502-19293,19345-49999,50101-65535
-				--out-range=<n4
-				--payload=known,unknown
-				--lua-desync=fake:blob=game_udp:repeats=10:payload=known,unknown
+				--dpi-desync-fooling=ts -> tcp_ts=-600000 + tcp_ts_up.
 			"
 			commit $cfgname
 		EOF
@@ -1568,7 +1453,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_exp
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=quic_4pda:@/opt/zapret2/files/fake/quic_initial_4pda_to.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
@@ -1576,7 +1460,6 @@ function set_cfg_nfqws_strat
 				--blob=stun2_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1587,7 +1470,6 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_max:repeats=4:tcp_ts=-600000:tcp_ts_up
@@ -1595,11 +1477,9 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=4:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=multisplit:pos=1:seqovl=480:seqovl_pattern=stun2_fake
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun,unknown
 				--payload=discord_ip_discovery
 				--lua-desync=fake:blob=quic_google:repeats=4
@@ -1609,8 +1489,6 @@ function set_cfg_nfqws_strat
 				--payload=unknown
 				--lua-desync=fake:blob=quic_google:payload=unknown:repeats=4
 				--lua-desync=fake:blob=discord_udp:payload=unknown:repeats=4
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1624,8 +1502,6 @@ function set_cfg_nfqws_strat
 				--out-range=<n4 --payload=known,unknown
 				--lua-desync=fake:blob=quic_4pda:payload=~empty:repeats=5
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=5
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
-				1.10.1 EXP: any-protocol для Discord/STUN/unknown уже выражен здесь явными --payload=discord_ip_discovery,stun,unknown.
 			"
 			commit $cfgname
 		EOF
@@ -1637,12 +1513,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_fake_tls_auto
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1656,7 +1530,6 @@ function set_cfg_nfqws_strat
 				--lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up:ip_id=zero
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up:ip_id=zero
 				--lua-desync=multidisorder:pos=1,midsld:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up
@@ -1665,16 +1538,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=multidisorder:pos=1,midsld
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1687,7 +1556,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1699,12 +1567,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_fake_tls_auto_alt
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1716,7 +1582,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up:ip_id=zero
 				--lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
@@ -1724,16 +1589,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1745,7 +1606,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1757,13 +1617,11 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_fake_tls_auto_alt2
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1775,7 +1633,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up:ip_id=zero
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up
@@ -1783,16 +1640,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1805,7 +1658,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1817,13 +1669,11 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_fake_tls_auto_alt3
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1835,7 +1685,6 @@ function set_cfg_nfqws_strat
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts=-600000:tcp_ts_up:ip_id=zero
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts=-600000:tcp_ts_up
@@ -1843,16 +1692,12 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=11
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1865,7 +1710,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n3 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1877,14 +1721,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_simple_fake
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1894,22 +1736,17 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1923,7 +1760,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n3 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=12
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1935,14 +1771,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_simple_fake_alt
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -1952,23 +1786,18 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -1981,7 +1810,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n2 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=10
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -1993,14 +1821,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_simple_fake_alt2
-				
 				--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -2010,23 +1836,18 @@ function set_cfg_nfqws_strat
 				--hostlist=/opt/zapret2/files/lists/google.list
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--payload=http_req
 				--lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_google:repeats=6
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=discord_udp:repeats=6
-				--new
-				Дописать в конец NFQWS_ARGS_CUSTOM через --new. Диапазоны 1024-65535 разбиты,
 				--new
 				--filter-tcp=1024-2052,2054-2082,2084-2086,2088-2095,2097-8442,8444-65535
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
@@ -2038,7 +1859,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list
 				--out-range=<n3 --payload=known,unknown
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=12
-				unknown через --payload=known,unknown + payload=~empty, поэтому лишние дубли не добавлены.
 			"
 			commit $cfgname
 		EOF
@@ -2050,7 +1870,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_martinbacker
-				
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=quick_dbank:@/opt/zapret2/files/fake/quic_initial_dbankcloud_ru.bin
 				--blob=quick_yt:@/opt/zapret2/files/fake/quic_my_youtube_initial.bin
@@ -2058,7 +1877,6 @@ function set_cfg_nfqws_strat
 				--blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin
 				--blob=stun:@/opt/zapret2/files/fake/stun.bin
-				--new
 				--hostlist-domains=googlevideo.com
 				--filter-tcp=443 --filter-l7=tls
 				--payload=tls_client_hello
@@ -2106,7 +1924,6 @@ function set_cfg_nfqws_strat
 				--filter-tcp=443 --filter-l7=tls
 				--payload=tls_client_hello
 				--lua-desync=hostfakesplit:host=ya.ru:tcp_md5:badsum
-				--new
 				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto
 				--payload=tls_client_hello,mtproto_initial
 				--out-range=-s34228
@@ -2131,11 +1948,9 @@ function set_cfg_nfqws_strat
 				--lua-desync=multisplit:pos=1:seqovl=582:seqovl_pattern=stun:strategy=7
 				--payload=http_req
 				--lua-desync=http_methodeol:badsum
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_initial:repeats=11
-				--new
 				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,49152-65535
 				--filter-l7=wireguard,stun,discord,mtproto,unknown
 				--out-range=<n2
@@ -2145,7 +1960,6 @@ function set_cfg_nfqws_strat
 				--in-range=x
 				--lua-desync=fake:blob=quic_initial:repeats=6:strategy=1
 				--lua-desync=fake:repeats=6:strategy=2
-				--new
 				--new
 				--filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442
 				--out-range=<n4
@@ -2168,7 +1982,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_krushaaa
-				
 				--blob=quic_steam:@/opt/zapret2/files/fake/quic_initial_steamcommunity_com.bin
 				--blob=quic_lol:@/opt/zapret2/files/fake/quic_initial_leagueoflegends.com.bin
 				--blob=tls_burger:@/opt/zapret2/files/fake/tls_burgerkingrus_ru.bin
@@ -2176,7 +1989,6 @@ function set_cfg_nfqws_strat
 				--blob=stun2_fake:@/opt/zapret2/files/fake/stun2.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
-				--new
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls
 				--hostlist-domains=discord.media
 				--payload=tls_client_hello
@@ -2213,18 +2025,15 @@ function set_cfg_nfqws_strat
 				--payload=quic_initial
 				--lua-desync=send:ipfrag:ipfrag_pos_udp=128
 				--lua-desync=fake:blob=game_udp:payload=~empty:repeats=4
-				--new
 				--filter-tcp=80,443 --filter-l7=http,tls
 				--payload=tls_client_hello
 				--lua-desync=fake:blob=stun2_fake:repeats=4:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=fake:blob=tls_burger:repeats=4:tcp_ts=-600000:tcp_ts_up
 				--payload=http_req
 				--lua-desync=fake:blob=tls_burger:repeats=4:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_lol:repeats=4
-				--new
 				--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun,unknown
 				--payload=discord_ip_discovery,stun
 				--lua-desync=fake:blob=quic_steam:repeats=4
@@ -2232,7 +2041,6 @@ function set_cfg_nfqws_strat
 				--payload=unknown
 				--lua-desync=fake:blob=quic_steam:payload=unknown:repeats=4
 				--lua-desync=fake:blob=discord_udp:payload=unknown:repeats=4
-				--new
 				--new
 				--filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442
 				--out-range=<n4
@@ -2255,7 +2063,6 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_hardcorp74
-				
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=quic_initial_vk_com:@/opt/zapret2/files/fake/quic_initial_vk_com.bin
 				--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin
@@ -2263,7 +2070,6 @@ function set_cfg_nfqws_strat
 				--blob=tls_sochi:@/opt/zapret2/files/fake/tls_clienthello_sochi_park.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/quic_initial_steamcommunity_com.bin
 				--blob=zero:0x00000000
-				--new
 				--filter-tcp=443
 				--filter-l7=tls
 				--hostlist=/opt/zapret2/files/lists/youtube.list
@@ -2280,7 +2086,6 @@ function set_cfg_nfqws_strat
 				--ipset=/opt/zapret2/files/lists/ipset_roblox.list
 				--payload=unknown
 				--lua-desync=fake:blob=quic_initial:payload=unknown:repeats=12
-				--new
 				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto
 				--payload=tls_client_hello,mtproto_initial
 				--lua-desync=circular:fails=2:time=300:retrans=3:nld=2
@@ -2295,11 +2100,9 @@ function set_cfg_nfqws_strat
 				--payload=http_req
 				--lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up
 				--lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_initial:repeats=11
-				--new
 				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,35349,49152-65535
 				--filter-l7=wireguard,stun,discord,mtproto,unknown
 				--out-range=<n2
@@ -2310,7 +2113,6 @@ function set_cfg_nfqws_strat
 				--lua-desync=fake:blob=quic_initial:repeats=6:strategy=2
 				--lua-desync=fake:blob=discord_udp:repeats=5:strategy=2
 				--lua-desync=fake:blob=quic_initial_vk_com:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:payload=all:repeats=6:strategy=3
-				--new
 				--new
 				--filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442
 				--out-range=<n4
@@ -2333,14 +2135,11 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_eduncey
-				
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin
 				--blob=quic_dbankcloud:@/opt/zapret2/files/fake/quic_initial_dbankcloud_ru.bin
-				--new
 				--filter-udp=3478-3481,19294-19344,50000-50100 --filter-l7=discord,stun --lua-desync=fake:blob=quic_dbankcloud:repeats=6 --new
 				--filter-udp=3478-3481,19294-19344,50000-50100 --filter-l7=unknown --lua-desync=fake:blob=quic_dbankcloud:repeats=12:cutoff=n3
-				--new
 				--filter-tcp=443,80,1984,2053,2083,2087,2096,5222,8443 --filter-l7=http,tls,mtproto
 				--payload=tls_client_hello,mtproto_initial
 				--lua-desync=circular:fails=2:time=300:retrans=3:nld=2
@@ -2354,11 +2153,9 @@ function set_cfg_nfqws_strat
 				--lua-desync=hostfakesplit:host=www.google.com:altorder=1:fool=ts:strategy=4
 				--payload=http_req
 				--lua-desync=http_methodeol:badsum
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_initial:repeats=11
-				--new
 				--filter-udp=590-600,1400,5349,49152-49999,50101-65535
 				--filter-l7=wireguard,mtproto,unknown
 				--out-range=<n2
@@ -2366,7 +2163,6 @@ function set_cfg_nfqws_strat
 				--lua-desync=circular:fails=2:time=300:retrans=3:nld=2
 				--lua-desync=fake:repeats=6:strategy=1
 				--lua-desync=fake:blob=quic_initial:repeats=6:strategy=2
-				--new
 				--new
 				--filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442
 				--out-range=<n4
@@ -2389,12 +2185,10 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__zm_uvvi2
-				
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/ACTIVE_DISCORD_UDP.bin
 				--blob=discord_disc:@/opt/zapret2/files/fake/discord-ip-discovery-without-port.bin
-				--new
 				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto
 				--payload=tls_client_hello,mtproto_initial
 				--lua-desync=circular:fails=2:time=300:retrans=3:nld=2
@@ -2406,18 +2200,15 @@ function set_cfg_nfqws_strat
 				--lua-desync=hostfakesplit:tcp_md5:tcp_ts_up:strategy=3
 				--payload=http_req
 				--lua-desync=http_methodeol:badsum
-				--new
 				--filter-udp=443 --filter-l7=quic
 				--payload=quic_initial
 				--lua-desync=fake:blob=quic_initial:repeats=11
-				--new
 				--filter-udp=3478-3481,5349,19294-19344,49152-65535
 				--filter-l7=discord,stun
 				--payload=discord_ip_discovery,stun
 				--lua-desync=circular:fails=2:time=200:retrans=2:nld=2
 				--lua-desync=fake:blob=discord_udp:ip_autottl=-1,3-20:repeats=12:strategy=1
 				--lua-desync=fake:blob=discord_udp:repeats=12:strategy=2
-				--new
 				--new
 				--filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442
 				--out-range=<n4

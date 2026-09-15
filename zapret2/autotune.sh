@@ -56,7 +56,7 @@ check_target() {
     local ip="$2"
     [ -z "$ip" ] && { echo "0:0"; return; }
     local t_start="$(date +%s%3N 2>/dev/null || date +%s)"
-    local code="$(curl -I -k --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 4 --max-time 6 --resolve "$host:443:$ip" "https://$host/" 2>/dev/null)"
+    local code="$(curl -I -k --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 2 --max-time 4 --resolve "$host:443:$ip" "https://$host/" 2>/dev/null)"
     local t_end="$(date +%s%3N 2>/dev/null || date +%s)"
     local diff=$(( t_end - t_start ))
     [ "$diff" -le 0 ] && diff=1
@@ -76,6 +76,17 @@ run_autotune() {
     trap cleanup INT TERM EXIT
     echo $$ > "$PID_FILE"
     : > "$LOG_FILE"
+
+    cat <<EOF > "$JSON_FILE"
+{
+  "running": true,
+  "progress": 0,
+  "current": "Инициализация тестирования...",
+  "index": 0,
+  "total": 25,
+  "best": null
+}
+EOF
 
     log "=== Запуск автоподбора стратегий Zapret2 ==="
     log "Режим: $mode"
@@ -161,6 +172,16 @@ z2_ready_03|Timestamp fake + multisplit (HR #3)|--filter-tcp=443 --filter-l7=tls
         [ -n "$c_id" ] || continue
         INDEX=$(( INDEX + 1 ))
         pct=$(( INDEX * 100 / TOTAL ))
+        cat <<EOF > "$JSON_FILE"
+{
+  "running": true,
+  "progress": $pct,
+  "current": "$c_title",
+  "index": $INDEX,
+  "total": $TOTAL,
+  "best": null
+}
+EOF
         log "--------------------------------------------------------"
         log "[$INDEX/$TOTAL] Проверка: $c_title ($c_id)"
 
@@ -270,6 +291,29 @@ EOF
 }
 
 case "$1" in
+    start)
+        if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
+            echo "ALREADY_RUNNING"
+            exit 0
+        fi
+        : > "$LOG_FILE"
+        cat <<EOF > "$JSON_FILE"
+{
+  "running": true,
+  "progress": 0,
+  "current": "Запуск фонового подбора...",
+  "index": 0,
+  "total": 25,
+  "best": null
+}
+EOF
+        ( "$0" auto ) </dev/null >/dev/null 2>&1 &
+        echo "STARTED"
+        ;;
+    stop)
+        cleanup
+        exit 0
+        ;;
     run|auto)
         run_autotune auto
         ;;
