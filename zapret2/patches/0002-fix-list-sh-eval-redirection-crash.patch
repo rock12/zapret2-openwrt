@@ -1,0 +1,22 @@
+From: Antigravity <antigravity@google.com>
+Date: Tue, 15 Sep 2026 23:00:00 +0000
+Subject: [PATCH] Fix list.sh eval redirection crash with out-range
+
+When NFQWS options contain expressions like --out-range=<n4,
+eval v="\$$1" in ash treats <n4 as input redirection from file n4,
+causing the service to crash with "can't open n4: no such file".
+Properly quoting the expansion prevents ash from interpreting redirection.
+---
+diff --git a/common/list.sh b/common/list.sh
+--- a/common/list.sh
++++ b/common/list.sh
+@@ -25,3 +25,3 @@
+ 	local v parm parm1 parm2 parm3 parm4 parm5 parm6 parm7 parm8 parm9 parm10 parm11 parm12 parm13 parmNA
+-	eval v="\$$1"
++	eval "v=\"\$$1\""
+ 	if contains "$v" "$HOSTLIST_MARKER" || contains "$v" "$HOSTLIST_NOAUTO_MARKER"; then
+@@ -57,3 +57,3 @@
+ 		}
+-		eval $1=\""$v"\"
++		eval "$1=\"$v\""
+ 	fi
