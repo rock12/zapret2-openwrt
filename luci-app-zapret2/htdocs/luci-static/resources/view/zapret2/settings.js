@@ -278,6 +278,14 @@ return view.extend({
         o.description = _('Select an anti-DPI strategy preset. "z2-ready-05" is verified to fix YouTube 4K and Discord without TLS protocol errors.');
         o.value('-', _('-- Select Strategy Preset to Apply --'));
         o.value('z2_ready_05', '⚡ ' + _('z2-ready-05 (Multisplit sequence overlap - Fix YouTube & Discord)'));
+        o.value('zm_games', '🎮 ' + _('Zapret-Manager Game Filter (Warzone, Apex, Battlefield, Roblox, Steam, EA)'));
+        o.value('zm_discord_media', '🎙️ ' + _('Zapret-Manager Discord Voice & Media (QUIC/STUN 50000+)'));
+        o.value('zm_yv01', '▶️ ' + _('Zapret-Manager Yv01 (Google TLS Fake + Multisplit seqovl=681)'));
+        o.value('zm_yv02', '▶️ ' + _('Zapret-Manager Yv02 (Multisplit pos=1,sniext+1 seqovl=1)'));
+        o.value('zm_yv03', '▶️ ' + _('Zapret-Manager Yv03 (Hex 0x0F Fake + Multisplit seqovl=620)'));
+        o.value('zm_yv08', '▶️ ' + _('Zapret-Manager Yv08 (Hostfakesplit google.com tcp_ts=-600000)'));
+        o.value('zm_yv16', '▶️ ' + _('Zapret-Manager Yv16 (Multisplit pos=1,sniext+1 badsum)'));
+        o.value('zm_yv24', '▶️ ' + _('Zapret-Manager Yv24 (STUN Fake badsum + Multisplit seqovl=654)'));
         o.value('flowseal_general', '🔥 ' + _('Flowseal Classic (YouTube 4K + Discord Voice)'));
         o.value('youtube_discord_ultimate', '🎯 ' + _('YouTube & Discord Ultimate'));
         o.value('z2_ready_06', '🛡️ ' + _('z2-ready-06 (Multidisorder SNI split)'));
@@ -766,6 +774,131 @@ return view.extend({
             title: _('Custom Gaming IP List'),
             desc: _('Add any custom game server IP subnets you wish to route via WARP.<br />One CIDR per line.'),
             rows: 15,
+        }).show();
+
+        /* Telegram Proxy (TG WS Proxy) tab */
+
+        tabname = 'telegram_tab';
+        s.tab(tabname, _('Telegram (TG WS Proxy)'));
+
+        o = s.taboption(tabname, form.DummyValue, '_tg_info_header');
+        o.rawhtml = true;
+        o.default = '<div style="background: #f0f7ff; border: 1px solid #cce3f5; border-radius: 6px; padding: 12px; margin-bottom: 15px;">' +
+            '<h4 style="margin: 0 0 6px 0; color: #005fb8;">✈️ ' + _('TG WS Proxy: Telegram через Cloudflare WebSocket') + '</h4>' +
+            '<p style="margin: 0; font-size: 13px; color: #333;">' +
+            _('Сервис поднимает локальный SOCKS5-прокси на роутере (порт 2080) и заворачивает запросы Telegram в Cloudflare WebSockets (cf-proxy). ' +
+              '<strong>Белый IP не требуется</strong> — прокси работает за любым NAT/провайдерским CGNAT. ' +
+              'Для экономии памяти роутера установка производится по запросу пользователя.') +
+            '</p></div>';
+
+        let tg_status_dummy = s.taboption(tabname, form.DummyValue, '_tg_status_view');
+        tg_status_dummy.rawhtml = true;
+        tg_status_dummy.default = '<span id="tg_status_indicator">⌛ ' + _('Нажмите "Проверить статус" ниже...') + '</span>';
+
+        let tg_status_btn = s.taboption(tabname, form.Button, '_tg_status_btn', _('Проверить статус'));
+        tg_status_btn.inputtitle = '🔍 ' + _('Проверить статус TG WS Proxy');
+        tg_status_btn.inputstyle = 'btn';
+        tg_status_btn.onclick = () => {
+            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'status' ]).then(res => {
+                let elem = document.getElementById('tg_status_indicator');
+                if (res.code == 0 && res.stdout) {
+                    try {
+                        let st = JSON.parse(res.stdout);
+                        if (st.running) {
+                            elem.innerHTML = '<span style="color: #2e7d32; font-weight: bold;">🟢 ЗАПУЩЕН</span> — SOCKS5 порт: ' + st.port + 
+                                '<br /><br /><a class="btn cbi-button-apply" style="display:inline-block; padding: 6px 14px; text-decoration: none; font-weight: bold;" href="' + st.link + '">🔗 ' + _('Подключить в Telegram в 1 клик') + '</a>' +
+                                '<br /><small style="color:#666; margin-top:4px; display:inline-block;">Ссылка: ' + st.link + '</small>';
+                        } else if (st.installed) {
+                            elem.innerHTML = '<span style="color: #ed6c02; font-weight: bold;">🟡 УСТАНОВЛЕН, НО ОСТАНОВЛЕН</span>';
+                        } else {
+                            elem.innerHTML = '<span style="color: #d32f2f; font-weight: bold;">⚪ НЕ УСТАНОВЛЕН</span> (память не расходуется)';
+                        }
+                    } catch(e) {
+                        elem.textContent = res.stdout;
+                    }
+                } else {
+                    elem.textContent = 'Ошибка проверки: ' + (res.stderr || res.stdout || 'код ' + res.code);
+                }
+            });
+        };
+
+        let tg_install_btn = s.taboption(tabname, form.Button, '_tg_install_btn', _('Установка сервиса'));
+        tg_install_btn.inputtitle = '📥 ' + _('Установить TG WS Proxy');
+        tg_install_btn.inputstyle = 'btn cbi-button-apply';
+        tg_install_btn.description = _('Скачивает легковесный бинарник TG WS Proxy под архитектуру роутера, регистрирует сервис в procd и сразу запускает его.');
+        tg_install_btn.onclick = () => {
+            ui.addNotification(null, E('p', _('Установка TG WS Proxy... Пожалуйста, подождите.')));
+            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'install' ]).then(res => {
+                if (res.code == 0) {
+                    ui.addNotification(null, E('p', _('TG WS Proxy успешно установлен и запущен!')));
+                    let btn = document.querySelector('button[id*="_tg_status_btn"]');
+                    if (btn) btn.click();
+                } else {
+                    ui.addNotification(null, E('p', _('Ошибка установки: ') + (res.stderr || res.stdout || '')));
+                }
+            });
+        };
+
+        let tg_restart_btn = s.taboption(tabname, form.Button, '_tg_restart_btn', _('Перезапуск сервиса'));
+        tg_restart_btn.inputtitle = '🔄 ' + _('Перезапустить TG WS Proxy');
+        tg_restart_btn.inputstyle = 'btn';
+        tg_restart_btn.onclick = () => {
+            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'restart' ]).then(() => {
+                ui.addNotification(null, E('p', _('TG WS Proxy перезапущен.')));
+                let btn = document.querySelector('button[id*="_tg_status_btn"]');
+                if (btn) btn.click();
+            });
+        };
+
+        let tg_remove_btn = s.taboption(tabname, form.Button, '_tg_remove_btn', _('Удаление сервиса'));
+        tg_remove_btn.inputtitle = '🗑️ ' + _('Удалить TG WS Proxy (Освободить память)');
+        tg_remove_btn.inputstyle = 'btn cbi-button-reset';
+        tg_remove_btn.description = _('Полностью останавливает сервис и удаляет исполняемый файл для освобождения флеш-памяти.');
+        tg_remove_btn.onclick = () => {
+            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'remove' ]).then(res => {
+                ui.addNotification(null, E('p', _('TG WS Proxy полностью удален, память освобождена.')));
+                let btn = document.querySelector('button[id*="_tg_status_btn"]');
+                if (btn) btn.click();
+            });
+        };
+
+        add_delim(s);
+
+        o = s.taboption(tabname, form.DummyValue, '_tg_lists_header');
+        o.rawhtml = true;
+        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('📋 Списки Telegram (Домены и Подсети IP)') + '</h3>';
+
+        o = s.taboption(tabname, form.Button, '_edit_tg_domains_btn', _('Домены Telegram (web.telegram.org, t.me, api...)'));
+        o.inputtitle = _('Просмотр / Правка');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/telegram_domains.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/telegram_domains.txt',
+            title: _('Список официальных доменов Telegram'),
+            desc: _('Домены Telegram для обхода desync / Zapret2.<br />Один домен на строку.'),
+            rows: 20,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_tg_ips_btn', _('Подсети DC Telegram (149.154.160.0/20, 91.108.0.0...)'));
+        o.inputtitle = _('Просмотр / Правка');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/telegram_ips.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/telegram_ips.txt',
+            title: _('Подсети дата-центров Telegram'),
+            desc: _('Диапазоны IP-адресов серверов Telegram.<br />Один CIDR на строку.'),
+            rows: 15,
+        }).show();
+
+        o = s.taboption(tabname, form.Button, '_edit_tg_all_btn', _('Объединенный список Telegram (Домены + IP)'));
+        o.inputtitle = _('Просмотр / Правка');
+        o.inputstyle = 'edit btn';
+        o.description = '/opt/zapret2/files/lists/telegram.txt';
+        o.onclick = () => new tools.fileEditDialog({
+            file: '/opt/zapret2/files/lists/telegram.txt',
+            title: _('Объединенный список Telegram'),
+            desc: _('Содержит как домены, так и диапазоны IP-адресов Telegram.<br />Одна запись на строку.'),
+            rows: 20,
         }).show();
 
         let map_promise = m.render();

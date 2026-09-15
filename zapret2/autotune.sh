@@ -124,9 +124,13 @@ run_autotune() {
 }
 EOF
 
-    # Список кандидатов из каталога Hellington-Rey + Flowseal
+    # Список кандидатов из каталога Hellington-Rey + Flowseal + Zapret-Manager
     CANDIDATES="
 z2_ready_05|Multisplit sequence overlap (HR #5 / Flowseal)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=1
+zm_yv01|Zapret-Manager Yv01 (Google TLS Fake + Multisplit seqovl=681)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --ip-id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=blob_tls_clienthello_www_google_com
+zm_yv02|Zapret-Manager Yv02 (Multisplit pos=1,sniext+1 seqovl=1)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,sniext+1:seqovl=1
+zm_yv08|Zapret-Manager Yv08 (Hostfakesplit google.com tcp_ts=-600000)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=hostfakesplit:host=google.com:tcp_ts=-600000
+zm_yv24|Zapret-Manager Yv24 (STUN Fake badsum + Multisplit seqovl=654)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=blob_stun:tcp_seq=-10000:badsum:repeats=8 --lua-desync=multisplit:pos=1:seqovl=654:seqovl_pattern=blob_stun
 z2_ready_06|Multidisorder SNI split (HR #6)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1
 z2_ready_01|Default fake + disorder (HR #1)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tcp_seq=-10000 --lua-desync=multidisorder:pos=1,midsld
 z2_ready_03|Timestamp fake + multisplit (HR #3)|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_ts=-1000:repeats=6 --lua-desync=multisplit:pos=1,midsld
@@ -138,7 +142,7 @@ flowseal_simple_fake|Flowseal Simple Fake|--filter-tcp=443 --filter-l7=tls --pay
 "
 
     INDEX=0
-    TOTAL=9
+    TOTAL=13
     rm -f "/tmp/zapret2_autotune_res.tmp"
 
     echo "$CANDIDATES" | while IFS='|' read -r c_id c_title c_args; do
