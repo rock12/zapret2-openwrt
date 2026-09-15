@@ -207,10 +207,25 @@ function init_before_start
 	rm -f $ZAPRET_BASE/init.d/openwrt/custom.d/*.apk*
 	rm -f /tmp/$ZAPRET_CFG_NAME+*.log
 	#*/
+	patch_fw4_offload
 	if [ "$daemon_log_enable" = "1" ]; then
 		insert_cron_task_logs "$daemon_log_size_max"
 	else
 		remove_cron_task_logs
+	fi
+	return 0
+}
+
+function patch_fw4_offload
+{
+	# INFO: Fix DPI desync bypass when Flow Offloading (Software/Hardware) is enabled in OpenWrt fw4
+	# Source: https://t.me/routerich/4/52378
+	local tmpl=/usr/share/firewall4/templates/ruleset.uc
+	[ ! -f "$tmpl" ] && return 0
+	if grep -q "meta l4proto { tcp, udp } flow offload @ft;" "$tmpl"; then
+		sed -i 's/meta l4proto { tcp, udp } flow offload @ft;/meta l4proto { tcp, udp } ct original packets ge 30 flow offload @ft;/g' "$tmpl"
+		logger -p notice -t "$ZAP_LOG_TAG" "patch_fw4_offload: patched fw4 template (ge 30 packets for flow offload)"
+		[ -x /sbin/fw4 ] && fw4 -q restart 2>/dev/null || true
 	fi
 	return 0
 }
