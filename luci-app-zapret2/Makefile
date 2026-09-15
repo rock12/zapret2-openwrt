@@ -19,10 +19,13 @@ define Package/$(PKG_NAME)/postinst
 if [ -z "$${IPKG_INSTROOT}" ]; then
 	rm -f /tmp/luci-index*
 	rm -rf /tmp/luci-modulecache/
-	#killall -HUP rpcd 2>/dev/null
 	/etc/init.d/rpcd reload
 	[ -f "/sbin/luci-reload" ] && /sbin/luci-reload
 	[ -f "/etc/init.d/uhttpd" ] && /etc/init.d/uhttpd reload
+	if [ -f "/opt/zapret2/restore-def-cfg.sh" ]; then
+		/opt/zapret2/restore-def-cfg.sh sync flowseal_general 2>/dev/null || true
+	fi
+	chmod 755 /opt/zapret2/*.sh 2>/dev/null || true
 fi
 exit 0
 endef
