@@ -963,18 +963,34 @@ return view.extend({
         return map_promise;
     },
 
-    handleSaveApply: function(ev, mode)
+    handleSaveApply: async function(ev, mode)
     {
-        return this.handleSave(ev).then(() => {
-            let apply_exec = tools.checkUnsavedChanges();
-            if (apply_exec) {
-                ui.changes.apply(mode == '0');
-                tools.setDefferedAction('restart', this.svc_info);
-            } else {
-                if (this.svc_info && this.svc_info.dmn && this.svc_info.dmn.inited) {
-                    tools.serviceActionEx('restart');
+        await this.handleSave(ev);
+        let apply_exec = tools.checkUnsavedChanges();
+        if (apply_exec) {
+            ui.changes.apply(mode == '0');
+            tools.setDefferedAction('restart', this.svc_info);
+        } else {
+            ui.showModal(null, [
+                E('p', { 'class': 'spinning' }, _('Применение настроек и списков...'))
+            ]);
+            try {
+                await fs.exec('/opt/zapret2/sync_config.sh');
+                let is_running = false;
+                try {
+                    let res = await fs.exec('/etc/init.d/zapret2', ['status']);
+                    is_running = (res.code == 0);
+                } catch(e) {}
+
+                if (is_running) {
+                    await fs.exec('/etc/init.d/zapret2', ['restart']);
                 }
+                ui.hideModal();
+                ui.addNotification(null, E('p', is_running ? _('Настройки и списки сохранены. Служба zapret2 перезапущена.') : _('Настройки и списки сохранены.')), 'info');
+            } catch(e) {
+                ui.hideModal();
+                ui.addNotification(null, E('p', _('Ошибка применения: ') + e.message), 'error');
             }
-        });
+        }
     },
 });

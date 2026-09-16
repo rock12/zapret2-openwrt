@@ -583,7 +583,15 @@ return baseclass.extend({
             }
             return this.writeAdv(this.file, value).then(async rc => {
                 txt.value = value;
-                ui.addNotification(null, E('p', _('Contents have been saved.')), 'info');
+                if (this.file && this.file.startsWith('/opt/zapret2/ipset/')) {
+                    let defFile = this.file.replace('/opt/zapret2/ipset/', '/opt/zapret2/ipset_def/');
+                    await this.writeAdv(defFile, value).catch(() => {});
+                }
+                try {
+                    uci.set('zapret2', 'config', '_list_updated', Date.now().toString());
+                    uci.save();
+                } catch(e) {}
+                ui.addNotification(null, E('p', _('Список сохранён на диске. Нажмите «Сохранить и применить», чтобы перезапустить службу с новыми записями.')), 'info');
                 if (this.callback) {
                     return this.callback(rc);
                 }
