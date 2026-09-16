@@ -54,20 +54,27 @@ resolve_ip() {
 check_target() {
     local host="$1"
     local ip="$2"
-    [ -z "$ip" ] && { echo "0:0"; return; }
+    local out_f="$3"
+    if [ -z "$ip" ]; then
+        if [ -n "$out_f" ]; then echo "0:0" > "$out_f"; else echo "0:0"; fi
+        return
+    fi
     local t_start="$(date +%s%3N 2>/dev/null || date +%s)"
-    local code="$(curl -I -k --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 2 --max-time 4 --resolve "$host:443:$ip" "https://$host/" 2>/dev/null)"
+    local code="$(curl -I -k --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 2 --max-time 3 --resolve "$host:443:$ip" "https://$host/" 2>/dev/null)"
     local t_end="$(date +%s%3N 2>/dev/null || date +%s)"
     local diff=$(( t_end - t_start ))
     [ "$diff" -le 0 ] && diff=1
+    local res="0:$diff"
     case "$code" in
         200|204|206|301|302|303|307|308)
-            echo "1:$diff"
-            ;;
-        *)
-            echo "0:$diff"
+            res="1:$diff"
             ;;
     esac
+    if [ -n "$out_f" ]; then
+        echo "$res" > "$out_f"
+    else
+        echo "$res"
+    fi
 }
 
 run_autotune() {
@@ -100,12 +107,18 @@ EOF
     YT_IP="$(resolve_ip www.youtube.com)"
     DC_IP="$(resolve_ip discord.com)"
     RT_IP="$(resolve_ip rutracker.org)"
+    IG_IP="$(resolve_ip www.instagram.com)"
+    GH_IP="$(resolve_ip github.com)"
+    X_IP="$(resolve_ip x.com)"
 
-    log "YouTube:    www.youtube.com -> ${YT_IP:-НЕ ОПРЕДЕЛЕН}"
-    log "Discord:    discord.com     -> ${DC_IP:-НЕ ОПРЕДЕЛЕН}"
-    log "Rutracker:  rutracker.org   -> ${RT_IP:-НЕ ОПРЕДЕЛЕН}"
+    log "YouTube:     www.youtube.com   -> ${YT_IP:-НЕ ОПРЕДЕЛЕН}"
+    log "Discord:     discord.com       -> ${DC_IP:-НЕ ОПРЕДЕЛЕН}"
+    log "Rutracker:   rutracker.org     -> ${RT_IP:-НЕ ОПРЕДЕЛЕН}"
+    log "Instagram:   www.instagram.com -> ${IG_IP:-НЕ ОПРЕДЕЛЕН}"
+    log "GitHub:      github.com        -> ${GH_IP:-НЕ ОПРЕДЕЛЕН}"
+    log "X (Twitter): x.com            -> ${X_IP:-НЕ ОПРЕДЕЛЕН}"
 
-    if [ -z "$YT_IP" ] && [ -z "$DC_IP" ]; then
+    if [ -z "$YT_IP" ] && [ -z "$DC_IP" ] && [ -z "$GH_IP" ]; then
         log "Ошибка: Не удалось разрешить DNS для тестовых целей. Проверьте сеть или DoH (https-dns-proxy)."
         exit 1
     fi
@@ -125,6 +138,9 @@ EOF
     [ -n "$YT_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$YT_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
     [ -n "$DC_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$DC_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
     [ -n "$RT_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$RT_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
+    [ -n "$IG_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$IG_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
+    [ -n "$GH_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$GH_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
+    [ -n "$X_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$X_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
 
     cat <<EOF > "$JSON_FILE"
 {
@@ -206,15 +222,35 @@ EOF
             continue
         fi
 
-        yt_res="$(check_target www.youtube.com "$YT_IP")"
+        check_target www.youtube.com "$YT_IP" /tmp/at_yt.tmp &
+        check_target discord.com "$DC_IP" /tmp/at_dc.tmp &
+        check_target www.instagram.com "$IG_IP" /tmp/at_ig.tmp &
+        check_target x.com "$X_IP" /tmp/at_x.tmp &
+        check_target github.com "$GH_IP" /tmp/at_gh.tmp &
+        check_target rutracker.org "$RT_IP" /tmp/at_rt.tmp &
+        wait
+
+        yt_res="$(cat /tmp/at_yt.tmp 2>/dev/null)"; rm -f /tmp/at_yt.tmp
         yt_ok="${yt_res%%:*}"
         yt_lat="${yt_res##*:}"
 
-        dc_res="$(check_target discord.com "$DC_IP")"
+        dc_res="$(cat /tmp/at_dc.tmp 2>/dev/null)"; rm -f /tmp/at_dc.tmp
         dc_ok="${dc_res%%:*}"
         dc_lat="${dc_res##*:}"
 
-        rt_res="$(check_target rutracker.org "$RT_IP")"
+        ig_res="$(cat /tmp/at_ig.tmp 2>/dev/null)"; rm -f /tmp/at_ig.tmp
+        ig_ok="${ig_res%%:*}"
+        ig_lat="${ig_res##*:}"
+
+        x_res="$(cat /tmp/at_x.tmp 2>/dev/null)"; rm -f /tmp/at_x.tmp
+        x_ok="${x_res%%:*}"
+        x_lat="${x_res##*:}"
+
+        gh_res="$(cat /tmp/at_gh.tmp 2>/dev/null)"; rm -f /tmp/at_gh.tmp
+        gh_ok="${gh_res%%:*}"
+        gh_lat="${gh_res##*:}"
+
+        rt_res="$(cat /tmp/at_rt.tmp 2>/dev/null)"; rm -f /tmp/at_rt.tmp
         rt_ok="${rt_res%%:*}"
         rt_lat="${rt_res##*:}"
 
@@ -222,15 +258,19 @@ EOF
         wait "$ENGINE_PID" 2>/dev/null || true
         ENGINE_PID=""
 
-        score=$(( yt_ok * 2 + dc_ok * 2 + rt_ok ))
-        tot_lat=$(( yt_lat + dc_lat + rt_lat ))
+        # Баллы: YouTube (2) + Discord (2) + Instagram (2) + X (2) + GitHub (1) + Rutracker (1) = макс 10
+        score=$(( ${yt_ok:-0} * 2 + ${dc_ok:-0} * 2 + ${ig_ok:-0} * 2 + ${x_ok:-0} * 2 + ${gh_ok:-0} + ${rt_ok:-0} ))
+        tot_lat=$(( ${yt_lat:-0} + ${dc_lat:-0} + ${ig_lat:-0} + ${x_lat:-0} + ${gh_lat:-0} + ${rt_lat:-0} ))
 
-        log "  YouTube:   $([ "$yt_ok" = "1" ] && echo "ДОСТУПЕН (${yt_lat}ms)" || echo "НЕДОСТУПЕН")"
-        log "  Discord:   $([ "$dc_ok" = "1" ] && echo "ДОСТУПЕН (${dc_lat}ms)" || echo "НЕДОСТУПЕН")"
-        log "  Rutracker: $([ "$rt_ok" = "1" ] && echo "ДОСТУПЕН (${rt_lat}ms)" || echo "НЕДОСТУПЕН")"
-        log "  Итоговый балл: $score/5 (Пинг: ${tot_lat}ms)"
+        log "  YouTube:     $([ "$yt_ok" = "1" ] && echo "ДОСТУПЕН (${yt_lat}ms)" || echo "НЕДОСТУПЕН")"
+        log "  Discord:     $([ "$dc_ok" = "1" ] && echo "ДОСТУПЕН (${dc_lat}ms)" || echo "НЕДОСТУПЕН")"
+        log "  Instagram:   $([ "$ig_ok" = "1" ] && echo "ДОСТУПЕН (${ig_lat}ms)" || echo "НЕДОСТУПЕН")"
+        log "  X (Twitter): $([ "$x_ok" = "1" ] && echo "ДОСТУПЕН (${x_lat}ms)" || echo "НЕДОСТУПЕН")"
+        log "  GitHub:      $([ "$gh_ok" = "1" ] && echo "ДОСТУПЕН (${gh_lat}ms)" || echo "НЕДОСТУПЕН")"
+        log "  Rutracker:   $([ "$rt_ok" = "1" ] && echo "ДОСТУПЕН (${rt_lat}ms)" || echo "НЕДОСТУПЕН")"
+        log "  Итоговый балл: $score/10 (Суммарный пинг: ${tot_lat}ms)"
 
-        echo "$c_id|$c_title|$score|$tot_lat|$yt_ok|$dc_ok|$rt_ok" >> "/tmp/zapret2_autotune_res.tmp"
+        echo "$c_id|$c_title|$score|$tot_lat" >> "/tmp/zapret2_autotune_res.tmp"
     done < /tmp/zapret2_autotune_cand.tmp
     rm -f /tmp/zapret2_autotune_cand.tmp
 
@@ -248,7 +288,7 @@ EOF
             
             log "========================================================"
             log "🏆 ПОБЕДИТЕЛЬ АВТОПОДБОРА: $WIN_TITLE"
-            log "Идентификатор: $WIN_ID | Баллы: $WIN_SCORE/5"
+            log "Идентификатор: $WIN_ID | Баллы: $WIN_SCORE/10 | Пинг: ${WIN_LAT}ms"
             log "========================================================"
 
             cat <<EOF > "$JSON_FILE"
@@ -259,6 +299,7 @@ EOF
     "id": "$WIN_ID",
     "title": "$WIN_TITLE",
     "score": $WIN_SCORE,
+    "max_score": 10,
     "latency": $WIN_LAT
   }
 }
@@ -293,6 +334,7 @@ EOF
 
 case "$1" in
     start)
+        smode="${2:-test}"
         if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
             echo "ALREADY_RUNNING"
             exit 0
@@ -304,12 +346,27 @@ case "$1" in
   "progress": 0,
   "current": "Запуск фонового подбора...",
   "index": 0,
-  "total": 25,
+  "total": 21,
   "best": null
 }
 EOF
-        ( "$0" auto ) </dev/null >/dev/null 2>&1 &
+        ( "$0" "$smode" ) </dev/null >/dev/null 2>&1 &
         echo "STARTED"
+        ;;
+    apply)
+        strat_to_apply="$2"
+        if [ -z "$strat_to_apply" ] && [ -f "$JSON_FILE" ]; then
+            strat_to_apply="$(grep -o '"id": "[^"]*"' "$JSON_FILE" | head -n 1 | cut -d'"' -f4)"
+        fi
+        if [ -n "$strat_to_apply" ]; then
+            log "Применение стратегии '$strat_to_apply'..."
+            $ZAPRET_BASE/restore-def-cfg.sh "(skip_base)(sync)" "$strat_to_apply"
+            /etc/init.d/zapret2 restart
+            echo "APPLIED $strat_to_apply"
+        else
+            echo "NO_STRATEGY"
+            exit 1
+        fi
         ;;
     stop)
         cleanup
@@ -332,7 +389,7 @@ EOF
         [ -f "$LOG_FILE" ] && cat "$LOG_FILE" || echo "Лог пуст"
         ;;
     *)
-        echo "Использование: $0 {auto|test|status|log}"
+        echo "Использование: $0 {start [auto|test]|apply [id]|stop|auto|test|status|log}"
         exit 1
         ;;
 esac

@@ -51,8 +51,14 @@ fbcdn.net
 ffzap.com
 frankerfacez.com
 ggpht.com
+ghcr.io
+github.com
+github.io
+githubassets.com
+githubusercontent.com
 google.ru
 googlevideo.com
+ig.me
 instagram.com
 jnn-pa.googleapis.com
 klipy.com
@@ -63,6 +69,7 @@ rutracker.cc
 rutracker.org
 stable.dl2.discordapp.net
 t.co
+twimg.com
 twitter.com
 wide-youtube.l.google.com
 x.com

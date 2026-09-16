@@ -360,31 +360,58 @@ return view.extend({
         let btn_autotune = s.taboption(tabname, form.Button, '_autotune_btn', _('Auto-Tune (Автоподбор стратегий)'));
         btn_autotune.inputtitle = '⚡ ' + _('Запустить автоподбор стратегии');
         btn_autotune.inputstyle = 'btn cbi-button-apply';
-        btn_autotune.description = _('Автоматически тестирует проверенные профили на YouTube, Discord и заблокированных сервисах и применяет наилучшую рабочую стратегию.');
+        btn_autotune.description = _('Автоматически тестирует проверенные профили на YouTube, Discord, Instagram, GitHub, X.com и заблокированных сервисах и определяет наилучшую рабочую стратегию.');
         btn_autotune.onclick = () => {
-            let is_finished = false;
+            let bestStrat = null;
+            let pollInterval = null;
+
             ui.showModal(_('Автоподбор стратегий Zapret2'), [
-                E('p', { id: 'autotune-status-header', class: 'spinning' }, _('Запуск тестирования... Проверка доступности сервисов и подбор лучшей стратегии.')),
+                E('p', { id: 'autotune-status-header', class: 'spinning' }, _('Запуск тестирования... Проверка доступности YouTube, Discord, Instagram, GitHub, X.com.')),
+                E('div', { id: 'autotune-progress-text', style: 'margin-bottom: 8px; font-weight: bold; color: #17a2b8;' }, ''),
                 E('pre', { id: 'autotune-log-box', style: 'max-height: 280px; overflow-y: auto; background: #1a1a1a; color: #33ff33; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;' }, _('Подготовка изолированного тестового окружения...')),
                 E('div', { class: 'right', style: 'margin-top: 15px;' }, [
+                    E('button', {
+                        class: 'btn cbi-button-action',
+                        id: 'autotune-apply-btn',
+                        style: 'display: none; margin-right: 10px; font-weight: bold;',
+                        click: (ev) => {
+                            if (!bestStrat || !bestStrat.id) return;
+                            let btn = ev.target;
+                            btn.disabled = true;
+                            btn.textContent = _('Применение стратегии...');
+                            let header = document.getElementById('autotune-status-header');
+                            if (header) {
+                                header.className = 'spinning';
+                                header.textContent = _('Применение стратегии "%s" и перезапуск службы...').format(bestStrat.title);
+                            }
+                            fs.exec('/opt/zapret2/restore-def-cfg.sh', [ '(skip_base)(sync)', bestStrat.id ]).then(res => {
+                                if (res.code === 0) {
+                                    return fs.exec('/etc/init.d/zapret2', [ 'restart' ]).then(() => {
+                                        ui.addNotification(null, E('p', _('Стратегия "%s" успешно применена! Перезагрузка страницы...').format(bestStrat.title)));
+                                        setTimeout(() => location.reload(), 1500);
+                                    });
+                                } else {
+                                    btn.disabled = false;
+                                    btn.textContent = _('Применить лучшую стратегию');
+                                    ui.addNotification(null, E('p', _('Ошибка применения стратегии: ') + (res.stderr || res.stdout || '')));
+                                }
+                            });
+                        }
+                    }, '🚀 ' + _('Применить лучшую стратегию')),
                     E('button', {
                         class: 'btn',
                         id: 'autotune-close-btn',
                         click: () => {
-                            clearInterval(pollInterval);
-                            if (is_finished) {
-                                location.reload();
-                            } else {
-                                ui.hideModal();
-                            }
+                            if (pollInterval) clearInterval(pollInterval);
+                            ui.hideModal();
                         }
                     }, _('Закрыть'))
                 ])
             ]);
 
-            fs.exec('/opt/zapret2/autotune.sh', [ 'start' ]);
+            fs.exec('/opt/zapret2/autotune.sh', [ 'start', 'test' ]);
 
-            let pollInterval = setInterval(() => {
+            pollInterval = setInterval(() => {
                 fs.read('/tmp/zapret2_autotune.log').then(content => {
                     let box = document.getElementById('autotune-log-box');
                     if (box && content) {
@@ -397,23 +424,48 @@ return view.extend({
                     if (jsonStr) {
                         try {
                             let st = JSON.parse(jsonStr);
-                            if (st && st.running === false) {
-                                is_finished = true;
-                                clearInterval(pollInterval);
-                                let header = document.getElementById('autotune-status-header');
+                            let header = document.getElementById('autotune-status-header');
+                            let prog = document.getElementById('autotune-progress-text');
+                            let applyBtn = document.getElementById('autotune-apply-btn');
+
+                            if (st && st.running) {
                                 if (header) {
-                                    header.className = '';
-                                    header.textContent = _('Тестирование завершено.');
+                                    header.className = 'spinning';
+                                    header.textContent = _('Тестирование: %s').format(st.current || '...');
                                 }
-                                let closeBtn = document.getElementById('autotune-close-btn');
-                                if (closeBtn) {
-                                    closeBtn.className = 'btn cbi-button-action';
-                                    closeBtn.textContent = _('Применить и обновить страницу');
+                                if (prog) {
+                                    prog.textContent = _('Прогресс: %d%% (%d из %d)').format(st.progress || 0, st.index || 0, st.total || 21);
                                 }
-                                if (st.best) {
-                                    ui.addNotification(null, E('p', _('Автоподбор завершен! Победитель: %s. Стратегия успешно применена.').format(st.best.title)));
+                            } else if (st && st.running === false) {
+                                if (pollInterval) clearInterval(pollInterval);
+                                if (st.best && st.best.id) {
+                                    bestStrat = st.best;
+                                    if (header) {
+                                        header.className = '';
+                                        header.style.fontWeight = 'bold';
+                                        header.style.color = '#28a745';
+                                        header.textContent = _('🏆 Лучшая стратегия: %s (Баллы: %d/%d, Пинг: %dms)').format(
+                                            st.best.title, st.best.score, st.best.max_score || 10, st.best.latency
+                                        );
+                                    }
+                                    if (prog) {
+                                        prog.style.color = '#28a745';
+                                        prog.textContent = _('Тестирование успешно завершено! Нажмите "Применить лучшую стратегию" для сохранения и запуска.');
+                                    }
+                                    if (applyBtn) {
+                                        applyBtn.style.display = 'inline-block';
+                                    }
                                 } else {
-                                    ui.addNotification(null, E('p', _('Автоподбор завершен, рабочая стратегия не найдена.')));
+                                    if (header) {
+                                        header.className = '';
+                                        header.style.fontWeight = 'bold';
+                                        header.style.color = '#dc3545';
+                                        header.textContent = _('Автоподбор завершен, рабочая стратегия не найдена.');
+                                    }
+                                    if (prog) {
+                                        prog.style.color = '#dc3545';
+                                        prog.textContent = _('Ни одна из протестированных стратегий не показала положительного результата.');
+                                    }
                                 }
                             }
                         } catch (e) {}
