@@ -53,17 +53,12 @@ resolve_ip() {
 
 check_target() {
     local host="$1"
-    local ip="$2"
-    local out_f="$3"
-    if [ -z "$ip" ]; then
-        if [ -n "$out_f" ]; then echo "0:0" > "$out_f"; else echo "0:0"; fi
-        return
-    fi
-    local t_start="$(date +%s%3N 2>/dev/null || date +%s)"
-    local code="$(curl -I -k --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 2 --max-time 3 --resolve "$host:443:$ip" "https://$host/" 2>/dev/null)"
-    local t_end="$(date +%s%3N 2>/dev/null || date +%s)"
-    local diff=$(( t_end - t_start ))
-    [ "$diff" -le 0 ] && diff=1
+    local out_f="$2"
+    local t_start="$(date +%s)"
+    local code="$(curl -I -k --silent --output /dev/null --write-out '%{http_code}' --connect-timeout 2 --max-time 3 "https://$host/" 2>/dev/null)"
+    local t_end="$(date +%s)"
+    local diff=$(( (t_end - t_start) * 1000 ))
+    [ "$diff" -le 0 ] && diff=80
     local res="0:$diff"
     case "$code" in
         200|204|206|301|302|303|307|308)
@@ -135,12 +130,7 @@ EOF
     nft delete table inet "$NFT_TABLE" 2>/dev/null || true
     nft add table inet "$NFT_TABLE" || { log "Ошибка создания nftable $NFT_TABLE"; exit 1; }
     nft add chain inet "$NFT_TABLE" out '{ type filter hook output priority mangle; policy accept; }' || exit 1
-    [ -n "$YT_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$YT_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
-    [ -n "$DC_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$DC_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
-    [ -n "$RT_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$RT_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
-    [ -n "$IG_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$IG_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
-    [ -n "$GH_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$GH_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
-    [ -n "$X_IP" ] && nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" ip daddr "$X_IP" tcp dport 443 queue num "$TEST_QNUM" bypass
+    nft add rule inet "$NFT_TABLE" out meta mark != "$TEST_MARK" tcp dport 443 queue num "$TEST_QNUM" bypass
 
     cat <<EOF > "$JSON_FILE"
 {
@@ -222,17 +212,17 @@ EOF
             continue
         fi
 
-        check_target www.youtube.com "$YT_IP" /tmp/at_yt.tmp &
+        check_target www.youtube.com /tmp/at_yt.tmp &
         p1=$!
-        check_target discord.com "$DC_IP" /tmp/at_dc.tmp &
+        check_target discord.com /tmp/at_dc.tmp &
         p2=$!
-        check_target www.instagram.com "$IG_IP" /tmp/at_ig.tmp &
+        check_target www.instagram.com /tmp/at_ig.tmp &
         p3=$!
-        check_target x.com "$X_IP" /tmp/at_x.tmp &
+        check_target x.com /tmp/at_x.tmp &
         p4=$!
-        check_target github.com "$GH_IP" /tmp/at_gh.tmp &
+        check_target github.com /tmp/at_gh.tmp &
         p5=$!
-        check_target rutracker.org "$RT_IP" /tmp/at_rt.tmp &
+        check_target rutracker.org /tmp/at_rt.tmp &
         p6=$!
         wait $p1 $p2 $p3 $p4 $p5 $p6 2>/dev/null || true
 
@@ -263,6 +253,7 @@ EOF
         kill -9 "$ENGINE_PID" 2>/dev/null || true
         wait "$ENGINE_PID" 2>/dev/null || true
         ENGINE_PID=""
+        sleep 0.3
 
         # Баллы: YouTube (2) + Discord (2) + Instagram (2) + X (2) + GitHub (1) + Rutracker (1) = макс 10
         score=$(( ${yt_ok:-0} * 2 + ${dc_ok:-0} * 2 + ${ig_ok:-0} * 2 + ${x_ok:-0} * 2 + ${gh_ok:-0} + ${rt_ok:-0} ))
@@ -341,10 +332,10 @@ EOF
 case "$1" in
     start)
         smode="${2:-test}"
-        if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
-            echo "ALREADY_RUNNING"
-            exit 0
-        fi
+        killall -9 autotune.sh nfqws2 2>/dev/null || true
+        nft delete table inet "$NFT_TABLE" 2>/dev/null || true
+        rm -f "$PID_FILE" /tmp/at_*.tmp
+        sleep 0.5
         : > "$LOG_FILE"
         cat <<EOF > "$JSON_FILE"
 {
@@ -352,7 +343,7 @@ case "$1" in
   "progress": 0,
   "current": "Запуск фонового подбора...",
   "index": 0,
-  "total": 21,
+  "total": 25,
   "best": null
 }
 EOF
