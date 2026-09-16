@@ -362,20 +362,27 @@ return view.extend({
         btn_autotune.inputstyle = 'btn cbi-button-apply';
         btn_autotune.description = _('Автоматически тестирует проверенные профили на YouTube, Discord и заблокированных сервисах и применяет наилучшую рабочую стратегию.');
         btn_autotune.onclick = () => {
+            let is_finished = false;
             ui.showModal(_('Автоподбор стратегий Zapret2'), [
-                E('p', { class: 'spinning' }, _('Запуск тестирования... Проверка доступности сервисов и подбор лучшей стратегии.')),
+                E('p', { id: 'autotune-status-header', class: 'spinning' }, _('Запуск тестирования... Проверка доступности сервисов и подбор лучшей стратегии.')),
                 E('pre', { id: 'autotune-log-box', style: 'max-height: 280px; overflow-y: auto; background: #1a1a1a; color: #33ff33; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;' }, _('Подготовка изолированного тестового окружения...')),
                 E('div', { class: 'right', style: 'margin-top: 15px;' }, [
                     E('button', {
                         class: 'btn',
                         id: 'autotune-close-btn',
-                        disabled: true,
-                        click: () => location.reload()
+                        click: () => {
+                            clearInterval(pollInterval);
+                            if (is_finished) {
+                                location.reload();
+                            } else {
+                                ui.hideModal();
+                            }
+                        }
                     }, _('Закрыть'))
                 ])
             ]);
 
-            fs.exec('/opt/zapret2/autotune.sh', [ 'auto' ]);
+            fs.exec('/opt/zapret2/autotune.sh', [ 'start' ]);
 
             let pollInterval = setInterval(() => {
                 fs.read('/tmp/zapret2_autotune.log').then(content => {
@@ -391,10 +398,15 @@ return view.extend({
                         try {
                             let st = JSON.parse(jsonStr);
                             if (st && st.running === false) {
+                                is_finished = true;
                                 clearInterval(pollInterval);
+                                let header = document.getElementById('autotune-status-header');
+                                if (header) {
+                                    header.className = '';
+                                    header.textContent = _('Тестирование завершено.');
+                                }
                                 let closeBtn = document.getElementById('autotune-close-btn');
                                 if (closeBtn) {
-                                    closeBtn.disabled = false;
                                     closeBtn.className = 'btn cbi-button-action';
                                     closeBtn.textContent = _('Применить и обновить страницу');
                                 }
@@ -407,7 +419,7 @@ return view.extend({
                         } catch (e) {}
                     }
                 });
-            }, 1200);
+            }, 1000);
         };
 
         add_delim(s, tools.nfqws_opt_url);

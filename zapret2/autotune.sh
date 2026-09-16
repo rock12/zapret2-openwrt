@@ -166,9 +166,8 @@ z2_ready_03|Timestamp fake + multisplit (HR #3)|--filter-tcp=443 --filter-l7=tls
 
     INDEX=0
     TOTAL=$(echo "$CANDIDATES" | grep -c '|')
-    rm -f "/tmp/zapret2_autotune_res.tmp"
-
-    echo "$CANDIDATES" | while IFS='|' read -r c_id c_title c_args; do
+    printf '%s\n' "$CANDIDATES" > /tmp/zapret2_autotune_cand.tmp
+    while IFS='|' read -r c_id c_title c_args; do
         [ -n "$c_id" ] || continue
         INDEX=$(( INDEX + 1 ))
         pct=$(( INDEX * 100 / TOTAL ))
@@ -232,7 +231,8 @@ EOF
         log "  Итоговый балл: $score/5 (Пинг: ${tot_lat}ms)"
 
         echo "$c_id|$c_title|$score|$tot_lat|$yt_ok|$dc_ok|$rt_ok" >> "/tmp/zapret2_autotune_res.tmp"
-    done
+    done < /tmp/zapret2_autotune_cand.tmp
+    rm -f /tmp/zapret2_autotune_cand.tmp
 
     # Удаляем тестовую nftables таблицу
     nft delete table inet "$NFT_TABLE" 2>/dev/null || true
