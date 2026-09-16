@@ -223,12 +223,18 @@ EOF
         fi
 
         check_target www.youtube.com "$YT_IP" /tmp/at_yt.tmp &
+        p1=$!
         check_target discord.com "$DC_IP" /tmp/at_dc.tmp &
+        p2=$!
         check_target www.instagram.com "$IG_IP" /tmp/at_ig.tmp &
+        p3=$!
         check_target x.com "$X_IP" /tmp/at_x.tmp &
+        p4=$!
         check_target github.com "$GH_IP" /tmp/at_gh.tmp &
+        p5=$!
         check_target rutracker.org "$RT_IP" /tmp/at_rt.tmp &
-        wait
+        p6=$!
+        wait $p1 $p2 $p3 $p4 $p5 $p6 2>/dev/null || true
 
         yt_res="$(cat /tmp/at_yt.tmp 2>/dev/null)"; rm -f /tmp/at_yt.tmp
         yt_ok="${yt_res%%:*}"
