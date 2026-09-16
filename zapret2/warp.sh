@@ -264,11 +264,14 @@ warp_pbr_up() {
         nft flush table inet zapret2_warp 2>/dev/null || true
         nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; }' 2>/dev/null || true
         
+        local route_games="$(uci -q get zapret2.config.WARP_GAMES || echo 1)"
+        local route_tg="$(uci -q get zapret2.config.WARP_TELEGRAM || echo 1)"
+
         local tmp_nft="/tmp/warp_targets.nft"
         printf 'add element inet zapret2_warp warp_targets { ' > "$tmp_nft"
         local first=1
         
-        if [ -s "$TG_IPS" ]; then
+        if [ "$route_tg" != "0" ] && [ -s "$TG_IPS" ]; then
             for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$TG_IPS" | grep -v ':'); do
                 [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
                 first=0
@@ -276,8 +279,8 @@ warp_pbr_up() {
             done
         fi
         
-        if [ -d "$GAMES_DIR" ]; then
-            for gfile in "$GAMES_DIR"/*.txt; do
+        if [ "$route_games" != "0" ]; then
+            for gfile in "$GAMES_DIR"/*.txt "$WARP_DIR/games_user.txt"; do
                 [ -f "$gfile" ] || continue
                 for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$gfile" | grep -v ':'); do
                     [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
@@ -286,17 +289,25 @@ warp_pbr_up() {
                 done
             done
         fi
-        printf ' }\n' >> "$tmp_nft"
-        nft -f "$tmp_nft" 2>/dev/null || true
+
+        if [ "$first" = 0 ]; then
+            printf ' }\n' >> "$tmp_nft"
+            nft -f "$tmp_nft" 2>/dev/null || true
+        fi
         rm -f "$tmp_nft"
 
         nft add chain inet zapret2_warp prerouting '{ type filter hook prerouting priority mangle - 1; }' 2>/dev/null || true
         nft add rule inet zapret2_warp prerouting ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
     else
         ipset create warp_targets hash:net maxelem 65536 2>/dev/null || ipset flush warp_targets 2>/dev/null || true
-        [ -s "$TG_IPS" ] && grep -vE '^[[:space:]]*(#|$)' "$TG_IPS" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
-        if [ -d "$GAMES_DIR" ]; then
-            for gf in "$GAMES_DIR"/*.txt; do
+        local route_games="$(uci -q get zapret2.config.WARP_GAMES || echo 1)"
+        local route_tg="$(uci -q get zapret2.config.WARP_TELEGRAM || echo 1)"
+
+        if [ "$route_tg" != "0" ] && [ -s "$TG_IPS" ]; then
+            grep -vE '^[[:space:]]*(#|$)' "$TG_IPS" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+        fi
+        if [ "$route_games" != "0" ]; then
+            for gf in "$GAMES_DIR"/*.txt "$WARP_DIR/games_user.txt"; do
                 [ -f "$gf" ] || continue
                 grep -vE '^[[:space:]]*(#|$)' "$gf" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
             done

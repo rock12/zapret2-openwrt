@@ -771,9 +771,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_warzone_btn', _('Warzone / Call of Duty (772 subnets)'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/Warzone_CallOfDuty.txt';
+        o.description = '/opt/zapret2/warp/games/Warzone_CallOfDuty.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/Warzone_CallOfDuty.txt',
+            file: '/opt/zapret2/warp/games/Warzone_CallOfDuty.txt',
             title: _('Warzone / Call of Duty IP CIDRs (772 subnets)'),
             desc: _('Full CIDR range list for Call of Duty Warzone servers.<br />One subnet per line.'),
             rows: 20,
@@ -783,9 +783,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_steam_btn', _('Steam IP Ranges'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/Steam.txt';
+        o.description = '/opt/zapret2/warp/games/Steam.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/Steam.txt',
+            file: '/opt/zapret2/warp/games/Steam.txt',
             title: _('Steam Game & Voice Servers'),
             desc: _('Steam servers list.<br />One subnet per line.'),
             rows: 15,
@@ -794,9 +794,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_ea_btn', _('EA / Origin IP Ranges'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/EA_Origin.txt';
+        o.description = '/opt/zapret2/warp/games/EA_Origin.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/EA_Origin.txt',
+            file: '/opt/zapret2/warp/games/EA_Origin.txt',
             title: _('EA & Origin Game Servers'),
             desc: _('EA/Origin servers list.<br />One subnet per line.'),
             rows: 15,
@@ -805,9 +805,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_battlenet_btn', _('Battle.net / Blizzard IP Ranges'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/BattleNet.txt';
+        o.description = '/opt/zapret2/warp/games/BattleNet.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/BattleNet.txt',
+            file: '/opt/zapret2/warp/games/BattleNet.txt',
             title: _('Battle.net / Blizzard Servers'),
             desc: _('Blizzard game servers list.<br />One subnet per line.'),
             rows: 15,
@@ -816,9 +816,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_epic_btn', _('Epic Games & Fortnite IP Ranges'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/EpicGames_Fortnite.txt';
+        o.description = '/opt/zapret2/warp/games/EpicGames_Fortnite.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/EpicGames_Fortnite.txt',
+            file: '/opt/zapret2/warp/games/EpicGames_Fortnite.txt',
             title: _('Epic Games & Fortnite Servers'),
             desc: _('Epic Games servers list.<br />One subnet per line.'),
             rows: 15,
@@ -827,9 +827,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_riot_btn', _('Riot Games & Valorant IP Ranges'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/RiotGames_Valorant.txt';
+        o.description = '/opt/zapret2/warp/games/RiotGames_Valorant.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/RiotGames_Valorant.txt',
+            file: '/opt/zapret2/warp/games/RiotGames_Valorant.txt',
             title: _('Riot Games & Valorant Servers'),
             desc: _('Riot Games servers list.<br />One subnet per line.'),
             rows: 15,
@@ -838,9 +838,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_roblox_btn', _('Roblox IP Ranges'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games/Roblox.txt';
+        o.description = '/opt/zapret2/warp/games/Roblox.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games/Roblox.txt',
+            file: '/opt/zapret2/warp/games/Roblox.txt',
             title: _('Roblox Game Servers'),
             desc: _('Roblox servers list.<br />One subnet per line.'),
             rows: 15,
@@ -849,9 +849,9 @@ return view.extend({
         o = s.taboption(tabname, form.Button, '_edit_custom_games_btn', _('Custom Gaming IP List (User Added)'));
         o.inputtitle = _('View / Edit');
         o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/files/lists/warp/games_user.txt';
+        o.description = '/opt/zapret2/warp/games_user.txt';
         o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/files/lists/warp/games_user.txt',
+            file: '/opt/zapret2/warp/games_user.txt',
             title: _('Custom Gaming IP List'),
             desc: _('Add any custom game server IP subnets you wish to route via WARP.<br />One CIDR per line.'),
             rows: 15,
