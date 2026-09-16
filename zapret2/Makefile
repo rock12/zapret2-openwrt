@@ -193,6 +193,7 @@ $(ZAPRET_DIR)/ipset/zapret-hosts-user.txt
 $(ZAPRET_DIR)/ipset/zapret-hosts-user-exclude.txt
 $(ZAPRET_DIR)/ipset/zapret-ip-exclude.txt
 $(ZAPRET_DIR)/ipset/zapret-hosts-auto.txt
+$(ZAPRET_DIR)/ipset/zapret-ip-user.txt
 $(ZAPRET_DIR)/ipset/cust1.txt
 $(ZAPRET_DIR)/ipset/cust2.txt
 $(ZAPRET_DIR)/ipset/cust3.txt
@@ -270,6 +271,9 @@ define Package/$(PKG_NAME)/install
 	# Install def conf files
 	$(INSTALL_DIR) $(1)$(ZAPRET_DIR)/ipset_def
 	$(CP) ./ipset/zapret*.txt  $(1)$(ZAPRET_DIR)/ipset_def/
+	$(CP) ./ipset/cust*.txt    $(1)$(ZAPRET_DIR)/ipset_def/
+	$(INSTALL_DIR) $(1)$(ZAPRET_DIR)/warp
+	[ -d ./warp ] && $(CP) ./warp/* $(1)$(ZAPRET_DIR)/warp/
 	# Fix permissions
 	chmod 644 $(1)$(ZAPRET_DIR)/ipset/*.txt
 	chmod 644 $(1)$(ZAPRET_DIR)/ipset_def/*.txt

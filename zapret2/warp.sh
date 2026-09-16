@@ -10,9 +10,9 @@ WARP_TABLE="100"
 FWMARK="0x1000"
 
 CF_PUBKEY="bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo="
-GAMES_DIR="$ZAPRET2_DIR/files/lists/warp/games"
-TG_IPS="$ZAPRET2_DIR/files/lists/telegram_ips.txt"
-ENDPOINTS_FILE="$ZAPRET2_DIR/files/lists/warp-endpoints.txt"
+GAMES_DIR="$WARP_DIR/games"
+TG_IPS="$WARP_DIR/telegram_ips.txt"
+ENDPOINTS_FILE="$WARP_DIR/warp-endpoints.txt"
 
 _log() {
     printf '%s [warp] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$WARP_LOG"

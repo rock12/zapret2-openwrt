@@ -2,7 +2,8 @@
 # List auto-updater for zapret2 and warp games/telegram
 
 ZAPRET2_DIR="${ZAPRET2_DIR:-/opt/zapret2}"
-GAMES_DIR="$ZAPRET2_DIR/files/lists/warp/games"
+WARP_DIR="$ZAPRET2_DIR/warp"
+GAMES_DIR="$WARP_DIR/games"
 BASE_GAMES_URL="https://raw.githubusercontent.com/medvedeff-true/ru-gaming-blocklist/main"
 LOG_FILE="/tmp/zapret2-update-lists.log"
 
@@ -12,7 +13,7 @@ _log() {
 
 update_telegram_ips() {
     _log "Обновление пулов IP Telegram..."
-    local dest="$ZAPRET2_DIR/files/lists/telegram_ips.txt"
+    local dest="$WARP_DIR/telegram_ips.txt"
     local url="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/files/lists/telegram_ips.txt"
     local tmp="/tmp/tg_ips.tmp"
     if curl -sL -m 15 -o "$tmp" "$url" && [ -s "$tmp" ]; then

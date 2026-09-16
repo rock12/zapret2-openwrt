@@ -791,7 +791,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_magnit:repeats=4:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.microsoft.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.microsoft.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun2_fake:repeats=4:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_burger:repeats=4:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_burger:repeats=4:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -817,7 +817,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fakedsplit:pattern=0x00:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=fakedsplit:pattern=0x00:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=fakedsplit:pattern=0x00:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fakedsplit:pattern=0x00:repeats=6:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fakedsplit:pattern=0x00:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -841,7 +841,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google --payload=http_req --lua-desync=multisplit:pos=2:seqovl=652:seqovl_pattern=tls_google
 				--new
@@ -865,7 +865,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=ya.ru:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=ya.ru:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=ya.ru:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -891,7 +891,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_seq=1000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit
 				--new
@@ -961,7 +961,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --payload=http_req --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
@@ -985,7 +985,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google --payload=http_req --lua-desync=multisplit:pos=2,sniext+1:seqovl=679:seqovl_pattern=tls_google
 				--new
@@ -1009,7 +1009,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:repeats=6:ip_id=zero:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:repeats=6:ip_id=zero:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
@@ -1032,7 +1032,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:repeats=4:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:repeats=4:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:repeats=4:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=hostfakesplit:host=ozon.ru:repeats=4:tcp_ts=-600000:tcp_md5:tcp_ts_up --payload=http_req --lua-desync=hostfakesplit:host=ozon.ru:repeats=4:tcp_ts=-600000:tcp_md5:tcp_ts_up
 				--new
@@ -1059,7 +1059,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_4pda:repeats=6:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -1085,7 +1085,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max
 				--new
@@ -1111,7 +1111,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max
 				--new
@@ -1137,7 +1137,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=7:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=stun2_fake:repeats=5:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -1161,7 +1161,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=multidisorder:pos=1,midsld
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=multidisorder:pos=1,midsld:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=multidisorder:pos=1,midsld:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=multidisorder:pos=1,midsld --payload=http_req --lua-desync=fake:blob=tls_max:repeats=11:tcp_seq=-10000:tcp_ack=-66000:tcp_ts_up --lua-desync=multidisorder:pos=1,midsld
 				--new
@@ -1185,7 +1185,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --lua-desync=fakedsplit:pos=1:repeats=8:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
@@ -1210,7 +1210,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up:ip_id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_seq=10000000:tcp_ack=-66000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
@@ -1235,7 +1235,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts=-600000:tcp_ts_up:ip_id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts=-600000:tcp_ts_up:ip_id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
@@ -1261,7 +1261,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -1287,7 +1287,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_seq=2:tcp_ack=-66000:tcp_ts_up
 				--new
@@ -1313,7 +1313,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=6:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up --payload=http_req --lua-desync=fake:blob=tls_max:repeats=6:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -1338,11 +1338,11 @@ function set_cfg_nfqws_strat
 				--blob=tls_sochi:@/opt/zapret2/files/fake/tls_clienthello_sochi_park.bin
 				--blob=discord_udp:@/opt/zapret2/files/fake/quic_initial_steamcommunity_com.bin
 				--blob=zero:0x00000000
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --lua-desync=fake:blob=tls_clienthello:optional:tcp_seq=-10000:tcp_ack=-66000:badsum:tls_mod=rnd,dupsid,sni=rzd.ru:repeats=4
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --lua-desync=fake:blob=tls_clienthello:optional:tcp_seq=-10000:tcp_ack=-66000:badsum:tls_mod=rnd,dupsid,sni=rzd.ru:repeats=4
 				--new
-				--filter-tcp=443 --hostlist=/opt/zapret2/files/lists/roblox.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:midhost=host-4:altorder=0:badsum:md5sig:badseq:badseq_increment=0:ip_id=seqgroup:tcp_ts_up
+				--filter-tcp=443 <HOSTLIST> --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:midhost=host-4:altorder=0:badsum:md5sig:badseq:badseq_increment=0:ip_id=seqgroup:tcp_ts_up
 				--new
-				--filter-udp=49152-65535 --ipset=/opt/zapret2/files/lists/ipset_roblox.list --payload=unknown --lua-desync=fake:blob=quic_initial:payload=unknown:repeats=12
+				--filter-udp=49152-65535 --ipset=/opt/zapret2/ipset/cust1.txt --payload=unknown --lua-desync=fake:blob=quic_initial:payload=unknown:repeats=12
 				--new
 				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto <HOSTLIST> --payload=tls_client_hello,mtproto_initial --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun_fake:strategy=1 --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun_fake:repeats=2-4:badsum:badseq:md5sig:strategy=1 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:md5sig:tcp_md5:repeats=5:strategy=1 --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:strategy=1 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=ya.ru:tcp_seq=10000:strategy=2 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=2 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1:strategy=3 --lua-desync=fake:blob=tls_clienthello:optional:tcp_seq=-10000:tcp_ack=-66000:badsum:tls_mod=rnd,dupsid,sni=rzd.ru:repeats=4:strategy=3 --payload=http_req --lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
 				--new
@@ -1396,15 +1396,15 @@ function set_cfg_nfqws_strat
 				--new
 				--hostlist-domains=mobatek.net --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tls_mod=rnd,dupsid,padencap:repeats=1 --lua-desync=multisplit:pos=2 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
 				--new
-				--ipset=/opt/zapret2/files/lists/ipset_do.list --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=ad.adriver.ru:tcp_ts=-1000 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_max:tcp_ts_up
+				--ipset=/opt/zapret2/ipset/cust2.txt --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=ad.adriver.ru:tcp_ts=-1000 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_max:tcp_ts_up
 				--new
-				--ipset=/opt/zapret2/files/lists/ipset_cf_full.list --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=hcaptcha.com:tcp_ts=-1000 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_max:tcp_ts_up
+				--ipset=/opt/zapret2/ipset/cust2.txt --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=hcaptcha.com:tcp_ts=-1000 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_max:tcp_ts_up
 				--new
-				--ipset=/opt/zapret2/files/lists/ipset.list --ipset=/opt/zapret2/files/lists/ipset_amazon.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list --ipset-ip=0.0.0.0 --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun:tcp_ts_up --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun:repeats=2-4:badsum:badseq:md5sig:tcp_ts_up --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:md5sig:tcp_md5:repeats=5:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:ip6_ttl=2:tcp_ts_up
+				--ipset=/opt/zapret2/ipset/zapret-ip-user.txt --ipset-exclude=/opt/zapret2/ipset/zapret-ip-exclude.txt --ipset-ip=0.0.0.0 --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun:tcp_ts_up --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun:repeats=2-4:badsum:badseq:md5sig:tcp_ts_up --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:md5sig:tcp_md5:repeats=5:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:ip6_ttl=2:tcp_ts_up
 				--new
-				--ipset=/opt/zapret2/files/lists/ipset.list --ipset=/opt/zapret2/files/lists/ipset_amazon.list --ipset-exclude=/opt/zapret2/files/lists/ipset_exclude.list --ipset-ip=0.0.0.0 --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=6
+				--ipset=/opt/zapret2/ipset/zapret-ip-user.txt --ipset-exclude=/opt/zapret2/ipset/zapret-ip-exclude.txt --ipset-ip=0.0.0.0 --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=6
 				--new
-				--ipset=/opt/zapret2/files/lists/ipset_ovh.list --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=hostfakesplit:host=ya.ru:tcp_md5:badsum
+				--ipset=/opt/zapret2/ipset/cust2.txt --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=hostfakesplit:host=ya.ru:tcp_md5:badsum
 				--new
 				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto <HOSTLIST> --payload=tls_client_hello,mtproto_initial --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --in-range=x --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_seq=10000:strategy=1 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=1 --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tls_mod=rnd,dupsid,sni=www.google.com:repeats=2:strategy=2 --lua-desync=multisplit:pos=1,midsld:strategy=2 --lua-desync=hostfakesplit:host=ozon.ru:midhost=host-2:seqovl=sniext+3:seqovl_pattern=tls_clienthello:badsum:tcp_md5:tcp_ts_up:strategy=3 --lua-desync=hostfakesplit:tcp_md5:tcp_ts_up:strategy=3 --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000:strategy=4 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=4 --lua-desync=per_instance_condition:strategy=5 --lua-desync=fake:blob=tls_clienthello:tcp_ts=-1000:cond=cond_tcp_has_ts:strategy=5 --lua-desync=fake:blob=tls_clienthello:ip_ttl=7:ip6_ttl=4:cond=cond_tcp_has_ts:cond_neg:strategy=5 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=5 --lua-desync=per_instance_condition:strategy=6 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_ts=-1000:cond=cond_tcp_has_ts:strategy=6 --lua-desync=fake:blob=tls_clienthello:ip_ttl=7:ip6_ttl=4:cond=cond_tcp_has_ts:cond_neg:strategy=6 --lua-desync=multisplit:pos=1:seqovl=336:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=6 --lua-desync=multisplit:pos=1:seqovl=582:seqovl_pattern=stun:strategy=7 --payload=http_req --lua-desync=http_methodeol:badsum
 				--new
@@ -1451,7 +1451,7 @@ function set_cfg_nfqws_strat
 				--blob=game_udp:@/opt/zapret2/files/fake/ACTIVE_GAME_UDP.bin
 				--filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --hostlist-domains=discord.media --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google
 				--new
-				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/files/lists/google.list --hostlist=/opt/zapret2/files/lists/youtube.list --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_max:repeats=4:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=480:seqovl_pattern=stun2_fake --payload=http_req --lua-desync=fake:blob=tls_max:repeats=4:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=480:seqovl_pattern=stun2_fake
 				--new
