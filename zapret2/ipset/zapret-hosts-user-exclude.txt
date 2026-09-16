@@ -1,4 +1,12 @@
 ####################################
+cloudflare-dns.com
+dns.google
+dns.nextdns.io
+dns.quad9.net
+doh.cleanbrowsing.org
+doh.opendns.com
+freedns.controld.com
+wikimedia-dns.org
 nalog.ru
 gstatic.com
 gosuslugi.ru
