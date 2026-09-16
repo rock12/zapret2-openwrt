@@ -205,8 +205,21 @@ warp_scout() {
     echo "Лучший эндпоинт: $best_ep (${best_ping}ms)"
 }
 
+# Check and automatically install WireGuard packages if missing
+check_install_deps() {
+    if ! command -v wg >/dev/null 2>&1 || [ ! -e /sys/module/wireguard ]; then
+        _log "Проверка зависимостей: установка wireguard пакетов..."
+        if command -v apk >/dev/null 2>&1; then
+            apk update && apk add wireguard-tools kmod-wireguard luci-proto-wireguard 2>&1 | tee -a "$WARP_LOG"
+        elif command -v opkg >/dev/null 2>&1; then
+            opkg update && opkg install wireguard-tools kmod-wireguard luci-proto-wireguard 2>&1 | tee -a "$WARP_LOG"
+        fi
+    fi
+}
+
 # Configure OpenWrt interface 'warp'
 warp_uci_setup() {
+    check_install_deps
     [ -s "$WARP_DEV" ] || warp_register || return 1
     
     local priv v4 v6 ep host port
@@ -242,10 +255,13 @@ warp_uci_setup() {
     uci commit network
 
     local wan_zone
-    wan_zone=$(uci show firewall 2>/dev/null | grep '=zone' | grep -E "name='wan'" | cut -d. -f1,2)
+    wan_zone=$(uci show firewall 2>/dev/null | grep 'name=.wan.' | cut -d. -f1,2 | head -n1)
     if [ -n "$wan_zone" ]; then
-        uci add_list "$wan_zone.network"='warp' 2>/dev/null
-        uci commit firewall
+        if ! uci -q get "$wan_zone.network" | grep -qw 'warp'; then
+            uci add_list "$wan_zone.network"='warp' 2>/dev/null
+            uci commit firewall
+            /etc/init.d/firewall reload 2>/dev/null || true
+        fi
     fi
     _log "Интерфейс warp настроен в UCI."
     return 0
