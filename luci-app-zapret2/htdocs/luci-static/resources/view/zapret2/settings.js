@@ -1,16 +1,10 @@
 'use strict';
 'require fs';
 'require form';
-'require tools.widgets as widgets';
 'require uci';
 'require ui';
 'require view';
 'require view.zapret2.tools as tools';
-
-document.head.appendChild(E('link', {
-    rel: 'stylesheet',
-    href: L.resource('view/zapret2/styles.css')
-}));
 
 return view.extend({
     svc_info: null,
@@ -29,6 +23,12 @@ return view.extend({
         if (!data) {
             return;
         }
+
+        document.head.appendChild(E('link', {
+            rel: 'stylesheet',
+            href: L.resource('view/zapret2/styles.css')
+        }));
+
         this.svc_info = data.svc_info;
         tools.execDefferedAction(this.svc_info);
 
@@ -907,7 +907,7 @@ return view.extend({
                 ui.changes.apply(mode == '0');
                 tools.setDefferedAction('restart', this.svc_info);
             } else {
-                if (this.svc_info?.dmn.inited) {
+                if (this.svc_info && this.svc_info.dmn && this.svc_info.dmn.inited) {
                     tools.serviceActionEx('restart');
                 }
             }
