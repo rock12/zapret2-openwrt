@@ -1,83 +1,129 @@
-# zapret2-openwrt 🚀
+# zapret2-openwrt 🛡️🎮
 
-[![GitHub release](https://img.shields.io/github/v/release/Dushnilin/zapret2-openwrt?color=blue&style=flat-square)](https://github.com/Dushnilin/zapret2-openwrt/releases)
-[![OpenWrt Version](https://img.shields.io/badge/OpenWrt-23.05%20%7C%2025.12%2B-green?style=flat-square&logo=openwrt)](https://openwrt.org)
-[![License](https://img.shields.io/badge/License-MIT-orange.style=flat-square)](https://opensource.org/licenses/MIT)
-[![Upstream Sync](https://img.shields.io/badge/Upstream-bol--van%2Fzapret2-brightgreen?style=flat-square&logo=github)](https://github.com/bol-van/zapret2)
+[![OpenWrt Version](https://img.shields.io/badge/OpenWrt-23.05%20%7C%2024.10%20%7C%2025.12%2B-green?style=flat-square&logo=openwrt)](https://openwrt.org)
+[![AmneziaWG](https://img.shields.io/badge/AmneziaWG-Obfuscated%20WARP-blue?style=flat-square)](https://amnezia.org)
+[![Architecture](https://img.shields.io/badge/Arch-aarch64%20%7C%20x86__64%20%7C%20arm%20%7C%20mips-orange?style=flat-square)](https://github.com/rock12/zapret2-openwrt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-**Zapret2** — мощный комплекс утилит для автономного обхода DPI (Deep Packet Inspection) и блокировок сетевого трафика.
-
-Данный репозиторий представляет собой **автоматизированный форк и систему автосборки пакетов** OpenWrt для `zapret2` с графическим веб-интерфейсом **LuCI**.
+**zapret2-openwrt** — интеллектуальный программный комплекс для роутеров OpenWrt, объединяющий автономный обход блокировок **DPI (Zapret2 / nfqws2)** с низкопинговым игровым туннелем **Cloudflare WARP на базе AmneziaWG** и удобным веб-интерфейсом **LuCI**.
 
 ---
 
-## 📌 Благодарности и Происхождение (Credits & Lineage)
+## ⚡ Ключевые возможности
 
-Проект создан на основе разработок двух ключевых авторов сообщества:
+### 🔄 1. Мульти-стратегия обхода DPI (Circular Rotator)
+- Ядро `nfqws2` работает по кольцевому алгоритму: если провайдер или ТСПУ меняет поведение фильтров, система автоматически перебирает проверенные desync-стратегии.
+- Восстанавливает работу **YouTube (вплоть до 4K 60fps без замедления)**, **Discord** (включая звонки и голосовые каналы), **Twitter / X**, **Instagram**, торрент-трекеров и свыше 97 000 заблокированных ресурсов.
 
-- 👑 **[bol-van / zapret2](https://github.com/bol-van/zapret2)** — **Автор оригинального Zapret / Zapret2**. Разработчик ядра `nfqws2`, утилит `ip2net`, `mdig`, инструмента диагностики `blockcheck2` и стратегий обхода DPI.
-- 🛠️ **[remittor / zapret-openwrt](https://github.com/remittor/zapret-openwrt)** — **Автор адаптации под OpenWrt**. Создатель архитектуры интеграции `zapret` в экосистему OpenWrt (UCI-конфигурация, сервисные скрипты `init.d`, горячая перезагрузка) и веб-интерфейса **LuCI** (`luci-app-zapret2`).
+### 🎮 2. Игровой туннель Cloudflare WARP на базе AmneziaWG
+- Встроенный протокол **AmneziaWG** (`proto amneziawg`) с продвинутой обфускацией (`Jc`, `Jmin`, `Jmax`, `H1-H4`, `I1`). **Обходит блокировки WireGuard на уровне ТСПУ в РФ.**
+- **Персональные тумблеры (ON / OFF)** прямо в веб-интерфейсе напротив каждой игры:
+  - 🔘 **Call of Duty: Warzone & Modern Warfare** (772 серверные подсети)
+  - 🔘 **Battlefield 6 / 2042 (EA DICE)**
+  - 🔘 **Steam** (игровые серверы и голосовые чаты без забивания канала загрузками)
+  - 🔘 **EA App / Origin**
+  - 🔘 **Battle.net / Blizzard**
+  - 🔘 **Epic Games & Fortnite**
+  - 🔘 **Riot Games & Valorant**
+  - 🔘 **Apex Legends & Rocket League**
+  - 🔘 **Ubisoft / Rainbow Six Siege**
+  - 🔘 **Roblox**
+  - 🔘 **League of Legends**
+  - 🔘 **Warframe**
+  - 🔘 **Dead By Daylight**, **Arma Reforger**, **Minecraft Extra** и др.
+- Кнопка **`[ View / Edit ]`** в один клик открывает список подсетей для просмотра или ручного добавления IP.
 
-### ⚙️ Что делает данный репозиторий (`Dushnilin/zapret2-openwrt`):
-1. **Авто-синхронизация с upstream**: GitHub Actions раз в 6 часов опрашивает репозиторий `bol-van/zapret2`. Как только `bol-van` выпускает новый релиз, данный репозиторий автоматически подтягивает обновления.
-2. **Сборка для всех архитектур**: Собирает готовые пакеты для 9 архитектурных семейств OpenWrt (`aarch64`, `arm_cortex-a7/a8/a9/a15`, `mips_24kc`, `mipsel_24kc`, `mips64`, `x86_64`, `i386`, `riscv64`, `powerpc`).
-3. **Поддержка нового менеджера пакетов APK**: Собирает как традиционные `.ipk` (opkg для OpenWrt 23.05+), так и подписанные `.apk` (для OpenWrt 25.12+).
+### 🎯 3. WARP Scout (Поиск минимального игрового пинга)
+- Роутер самостоятельно опрашивает десятки серверов Cloudflare прямо с вашей линии и выбирает эндпоинт с **минимальной задержкой** (от 20 мс) и нулевой потерей пакетов.
+
+### ⚡ 4. FastPath Auto-Exclude (Умная разгрузка роутера)
+- Если ресурс открывается напрямую без цензуры (проверяется прямым HTTP-зондированием), система автоматически заносит его в `nozapret` (аппаратный FastPath).
+- Трафик незаблокированных ресурсов идёт напрямую через вашего провайдера на полной гигабитной скорости без очередей `NFQUEUE` и нагрузки на процессор роутера.
+
+### 🧲 5. Conntrack Scanner (Авто-детектор жестких IP-банов)
+- Если ресурс заблокирован по IP наглухо (пакеты TCP SYN сбрасываются ТСПУ, как у Railway Anycast), фоновый демон роутера автоматически фиксирует это и бесшовно перенаправляет этот IP в туннель WARP.
+
+### 🛡️ 6. Строгая защита Рунета
+- Национальные зоны (`.ru`, `.su`, `.рф`, `.дети`), а также сервисы российских банков и Госуслуг строго исключены из перехвата и всегда работают напрямую с максимальной безопасностью.
 
 ---
 
-## 📦 Установка
+## 🚀 Быстрая установка (в 1 команду)
 
-### 📶 OpenWrt 25.12+ (Менеджер пакетов APK)
+Подключитесь к роутеру по SSH (`ssh root@192.168.1.1`) и выполните универсальную команду установки:
+
 ```sh
-# 1. Добавление публичного ключа подписи
-wget -O /etc/apk/keys/zapret2-dushnilin.pub https://github.com/Dushnilin/zapret2-openwrt/releases/latest/download/zapret2-dushnilin.pub
-
-# 2. Скачивание пакета zapret2 под вашу архитектуру и LuCI UI
-wget -O /tmp/zapret2.apk "https://github.com/Dushnilin/zapret2-openwrt/releases/latest/download/zapret2_$(. /etc/os-release; echo "$OPENWRT_ARCH").apk"
-wget -O /tmp/luci-app-zapret2.apk https://github.com/Dushnilin/zapret2-openwrt/releases/latest/download/luci-app-zapret2.apk
-
-# 3. Установка
-apk add /tmp/zapret2.apk /tmp/luci-app-zapret2.apk
+curl -sSL https://raw.githubusercontent.com/rock12/zapret2-openwrt/zap1/install.sh | sh
 ```
 
-### 📶 OpenWrt 23.05+ (Менеджер пакетов OPKG)
-```sh
-# 1. Скачивание пакета zapret2 под вашу архитектуру и LuCI UI
-wget -O /tmp/zapret2.ipk "https://github.com/Dushnilin/zapret2-openwrt/releases/latest/download/zapret2_$(. /etc/os-release; echo "$OPENWRT_ARCH").ipk"
-wget -O /tmp/luci-app-zapret2.ipk https://github.com/Dushnilin/zapret2-openwrt/releases/latest/download/luci-app-zapret2.ipk
+*(Если на роутере нет `curl`, используйте: `wget -qO- https://raw.githubusercontent.com/rock12/zapret2-openwrt/zap1/install.sh | sh`)*
 
-# 2. Установка
-opkg update
-opkg install /tmp/zapret2.ipk /tmp/luci-app-zapret2.ipk
-```
-
-После установки сервис запускается автоматически. Графическая настройка доступна в меню **LuCI → Службы → Zapret2**.
+### Что делает скрипт установки:
+1. Автоматически определяет версию OpenWrt (`23.05`, `24.10` с `opkg` или `25.12+` с `apk`).
+2. Устанавливает все необходимые пакеты (`curl`, `ca-certificates`, `nftables`, `kmod-nf-conntrack`, `amneziawg-tools`/`wireguard-tools`, `bind-tools`).
+3. Разворачивает `zapret2`, сервисный демон `init.d`, скрипты автоподбора и обфусцированный конфиг WARP.
+4. Устанавливает веб-интерфейс **LuCI** с раздельными тумблерами для игр.
+5. Настраивает автозапуск при перезагрузке роутера (`/etc/init.d/zapret2 enable`).
+6. Автоматически запускает **WARP Scout** и выбирает самый быстрый эндпоинт Cloudflare.
 
 ---
 
-## 🖼️ Веб-интерфейс LuCI
+## 📖 Как пользоваться
 
-![Zapret2 LuCI UI](https://github.com/user-attachments/assets/4ad3eac5-44a6-493c-a001-997d0c1a36eb)
+### 1. Веб-интерфейс LuCI
+1. Откройте в браузере страницу роутера: **`http://192.168.1.1`**
+2. Перейдите в меню: **Службы** → **Zapret 2**
 
----
+### 2. Вкладка «Cloudflare WARP (Games)»
+- **Enable Cloudflare WARP Tunnel**: Главный переключатель туннеля (по умолчанию включен).
+- **Route Telegram via WARP**: Прозрачная маршрутизация Telegram для разблокировки на всех устройствах в доме.
+- **Scout Endpoint**: Кнопка для пересканирования и выбора сервера Cloudflare с минимальным пингом.
+- **Индивидуальные тумблеры игр**:
+  - Напротив каждой игры переключите тумблер в положение **ВКЛ** или **ВЫКЛ** (например, выключить Warzone и оставить включенным только Battlefield 6).
+  - Нажмите кнопку **`[ View / Edit ]`**, если хотите просмотреть или добавить свои подсети IP.
+  - Нажмите **«Сохранить и применить»** внизу страницы.
 
-## 💻 Локальная синхронизация для разработчиков
-
-Для проверки обновлений или ручной синхронизации в репозитории доступен скрипт:
-
-```bash
-# Проверить наличие новых версий upstream у bol-van/zapret2
-./sync-upstream.sh --check
-
-# Обновить Makefile локально
-./sync-upstream.sh
-
-# Обновить и сразу отправить в ветку zap1 для автосборки релиза
-./sync-upstream.sh --push
-```
+### 3. Вкладка «Общие настройки»
+- Режим фильтрации: **`autohostlist`** (рекомендуется — сайты добавляются автоматически при первом обращении, если к ним обнаружены блокировки).
+- Готовые стратегии обхода DPI: уже преднастроена сбалансированная мульти-стратегия с ротацией для обхода любых видов блокировок ТСПУ.
 
 ---
 
-## 📜 Лицензия
+## 🛠️ Полезные команды терминала (CLI)
 
-Лицензия проекта — **MIT**, в соответствии с исходными репозиториями [bol-van/zapret2](https://github.com/bol-van/zapret2) и [remittor/zapret-openwrt](https://github.com/remittor/zapret-openwrt).
+| Команда | Описание |
+|---|---|
+| `/opt/zapret2/warp.sh status` | Проверить статус туннеля WARP (подключение и текущий эндпоинт) |
+| `/opt/zapret2/warp.sh scout` | Запустить тест пинга и переключиться на самый быстрый сервер |
+| `/opt/zapret2/warp.sh reload` | Мгновенно перезагрузить правила маршрутизации игр без рестарта демона |
+| `/opt/zapret2/autolearn-cidr.sh list` | Показать автоматически изученные домены и подсети CIDR |
+| `tail -f /tmp/autolearn.log` | Просмотр журнала автоподбора доменов и IP в реальном времени |
+| `cat /tmp/zapret2-warp.log` | Просмотр логов игрового туннеля WARP |
+| `/etc/init.d/zapret2 restart` | Полный перезапуск всех компонентов zapret2 |
+
+---
+
+## 📁 Структура каталогов на роутере
+
+- `/opt/zapret2/` — исполняемые файлы и управляющие скрипты:
+  - `warp.sh` — менеджер туннеля Cloudflare WARP (AmneziaWG)
+  - `autolearn-cidr.sh` — фоновый демон автоподбора, FastPath и conntrack-сканера
+  - `comfunc.sh`, `init.d.sh` — системные функции инициализации OpenWrt
+- `/opt/zapret2/warp/` — конфигурация туннеля:
+  - `WARP.conf` — защищенный конфиг AmneziaWG с параметрами обфускации
+  - `warp-endpoints.txt` — список IP-эндпоинтов для скаута пинга
+  - `games/` — файлы со списками IP-подсетей для каждой игры
+  - `games_user.txt` — пользовательский список IP для любых своих игр
+- `/opt/zapret2/ipset/` — списки хостов:
+  - `zapret-hosts-user.txt` — основной список заблокированных доменов
+  - `zapret-hosts-user-exclude.txt` — список исключений (FastPath)
+- `/www/luci-static/resources/view/zapret2/` — фронтенд веб-интерфейса LuCI.
+
+---
+
+## 📜 Лицензия и благодарности
+
+- Лицензия: **MIT**.
+- **[bol-van / zapret2](https://github.com/bol-van/zapret2)** — автор оригинального комплекса Zapret2 и утилиты `nfqws2`.
+- **[remittor / zapret-openwrt](https://github.com/remittor/zapret-openwrt)** — автор адаптации под OpenWrt и базового интерфейса LuCI.
+- **[AmneziaWG](https://amnezia.org)** — обфусцированный протокол WireGuard для пробития цензуры ТСПУ.

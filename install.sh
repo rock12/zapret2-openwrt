@@ -1,0 +1,201 @@
+#!/bin/sh
+# ==============================================================================
+# Автоматический установщик zapret2-openwrt + AmneziaWG Cloudflare WARP
+# Поддерживает:
+#   - OpenWrt 23.05 / 24.10 (opkg)
+#   - OpenWrt 25.12+ / SNAPSHOT (apk)
+# Архитектуры: aarch64, armv7, x86_64, mips, mipsel, etc.
+# Репозиторий: https://github.com/rock12/zapret2-openwrt (ветка zap1)
+# ==============================================================================
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+REPO_RAW="https://raw.githubusercontent.com/rock12/zapret2-openwrt/zap1"
+INSTALL_DIR="/opt/zapret2"
+
+echo ""
+echo -e "${CYAN}======================================================================${NC}"
+echo -e "${BOLD}${CYAN}      Установка zapret2-openwrt + AmneziaWG Cloudflare WARP           ${NC}"
+echo -e "${CYAN}======================================================================${NC}"
+echo ""
+
+# 1. Проверка прав суперпользователя
+if [ "$(id -u)" -ne 0 ]; then
+    echo -e "${RED}[ОШИБКА] Скрипт должен быть запущен с правами root!${NC}"
+    exit 1
+fi
+
+# 2. Определение пакетного менеджера (apk vs opkg)
+echo -e "${YELLOW}[1/6] Проверка пакетного менеджера OpenWrt...${NC}"
+PKG_MGR="none"
+if command -v apk >/dev/null 2>&1; then
+    PKG_MGR="apk"
+    echo -e "      ${GREEN}✓${NC} Обнаружен менеджер пакетов ${BOLD}APK${NC} (OpenWrt >= 25.12+)"
+elif command -v opkg >/dev/null 2>&1; then
+    PKG_MGR="opkg"
+    echo -e "      ${GREEN}✓${NC} Обнаружен менеджер пакетов ${BOLD}OPKG${NC} (OpenWrt <= 24.10)"
+else
+    echo -e "${RED}[ОШИБКА] Не найден пакетный менеджер (apk или opkg)!${NC}"
+    exit 1
+fi
+
+# 3. Установка обязательных системных зависимостей
+echo -e "\n${YELLOW}[2/6] Установка системных зависимостей...${NC}"
+if [ "$PKG_MGR" = "apk" ]; then
+    echo "      Обновление индексов пакетов (apk update)..."
+    apk update || true
+    
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack"
+    OPTIONAL_PKGS="kmod-amneziawg amneziawg-tools wireguard-tools kmod-wireguard luci-proto-wireguard bind-tools"
+    
+    for p in $REQUIRED_PKGS; do
+        if apk info -e "$p" >/dev/null 2>&1; then
+            echo -e "      ${GREEN}✓${NC} $p (уже установлен)"
+        else
+            echo "      -> Установка $p..."
+            apk add "$p" || echo -e "      ${YELLOW}[!] Не удалось установить $p (проверьте репозитории)${NC}"
+        fi
+    done
+
+    for p in $OPTIONAL_PKGS; do
+        if apk info -e "$p" >/dev/null 2>&1; then
+            echo -e "      ${GREEN}✓${NC} $p (уже установлен)"
+        else
+            apk add "$p" 2>/dev/null || true
+        fi
+    done
+else
+    echo "      Обновление индексов пакетов (opkg update)..."
+    opkg update || true
+
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack"
+    OPTIONAL_PKGS="kmod-amneziawg amneziawg-tools wireguard-tools kmod-wireguard luci-proto-wireguard bind-tools"
+
+    for p in $REQUIRED_PKGS; do
+        if opkg list-installed | grep -qw "^$p"; then
+            echo -e "      ${GREEN}✓${NC} $p (уже установлен)"
+        else
+            echo "      -> Установка $p..."
+            opkg install "$p" || echo -e "      ${YELLOW}[!] Не удалось установить $p (проверьте репозитории)${NC}"
+        fi
+    done
+
+    for p in $OPTIONAL_PKGS; do
+        if ! opkg list-installed | grep -qw "^$p"; then
+            opkg install "$p" 2>/dev/null || true
+        fi
+    done
+fi
+
+# 4. Подготовка каталогов
+echo -e "\n${YELLOW}[3/6] Настройка каталогов и компонентов zapret2...${NC}"
+mkdir -p "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR/warp"
+mkdir -p "$INSTALL_DIR/warp/games"
+mkdir -p "$INSTALL_DIR/ipset"
+mkdir -p "$INSTALL_DIR/files/fake"
+mkdir -p /etc/hotplug.d/iface
+
+# Определение источника файлов: локальная папка (если скрипт запущен из клонированного репозитория) или скачивание из GitHub
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+IS_LOCAL=0
+if [ -f "$SCRIPT_DIR/zapret2/warp.sh" ] && [ -f "$SCRIPT_DIR/zapret2/init.d.sh" ]; then
+    IS_LOCAL=1
+fi
+
+if [ "$IS_LOCAL" = "1" ]; then
+    echo "      Копирование файлов из локального каталога..."
+    cp -rf "$SCRIPT_DIR/zapret2/"* "$INSTALL_DIR/" 2>/dev/null || true
+    cp -f "$SCRIPT_DIR/zapret2/init.d.sh" /etc/init.d/zapret2
+    
+    if [ -d "$SCRIPT_DIR/luci-app-zapret2/htdocs" ]; then
+        mkdir -p /www/luci-static/resources/view/zapret2
+        cp -rf "$SCRIPT_DIR/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/"* /www/luci-static/resources/view/zapret2/ 2>/dev/null || true
+    fi
+    if [ -d "$SCRIPT_DIR/luci-app-zapret2/root" ]; then
+        cp -rf "$SCRIPT_DIR/luci-app-zapret2/root/"* / 2>/dev/null || true
+    fi
+else
+    echo "      Загрузка актуальных файлов из GitHub (ветка zap1)..."
+    curl -sSL -m 15 "$REPO_RAW/zapret2/warp.sh" -o "$INSTALL_DIR/warp.sh"
+    curl -sSL -m 15 "$REPO_RAW/zapret2/autolearn-cidr.sh" -o "$INSTALL_DIR/autolearn-cidr.sh"
+    curl -sSL -m 15 "$REPO_RAW/zapret2/init.d.sh" -o /etc/init.d/zapret2
+    curl -sSL -m 15 "$REPO_RAW/zapret2/warp/WARP.conf" -o "$INSTALL_DIR/warp/WARP.conf" || true
+    curl -sSL -m 15 "$REPO_RAW/zapret2/warp/warp-endpoints.txt" -o "$INSTALL_DIR/warp/warp-endpoints.txt" || true
+    curl -sSL -m 15 "$REPO_RAW/zapret2/warp/telegram_ips.txt" -o "$INSTALL_DIR/warp/telegram_ips.txt" || true
+
+    mkdir -p /www/luci-static/resources/view/zapret2
+    mkdir -p /usr/share/luci/menu.d
+    mkdir -p /usr/share/rpcd/acl.d
+
+    curl -sSL -m 15 "$REPO_RAW/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/settings.js" -o /www/luci-static/resources/view/zapret2/settings.js || true
+    curl -sSL -m 15 "$REPO_RAW/luci-app-zapret2/root/usr/share/luci/menu.d/luci-app-zapret2.json" -o /usr/share/luci/menu.d/luci-app-zapret2.json || true
+    curl -sSL -m 15 "$REPO_RAW/luci-app-zapret2/root/usr/share/rpcd/acl.d/luci-app-zapret2.json" -o /usr/share/rpcd/acl.d/luci-app-zapret2.json || true
+fi
+
+# 5. Установка прав на исполнение
+chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null || true
+chmod +x /etc/init.d/zapret2
+[ -f "$INSTALL_DIR/warp/WARP.conf" ] && chmod 600 "$INSTALL_DIR/warp/WARP.conf"
+
+# Настройка hotplug для восстановления маршрутов WARP
+cat > /etc/hotplug.d/iface/99-warp << 'EOF'
+[ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "warp" ] || exit 0
+ip route replace default dev warp table 100 2>/dev/null || true
+[ -x /opt/zapret2/warp.sh ] && /opt/zapret2/warp.sh reload >/dev/null 2>&1 &
+exit 0
+EOF
+chmod +x /etc/hotplug.d/iface/99-warp
+
+# 6. Конфигурация UCI по умолчанию
+echo -e "\n${YELLOW}[4/6] Настройка конфигурации сервиса и тумблеров игр...${NC}"
+uci -q delete zapret2.config.WARP_GAMES || true
+uci -q set zapret2.config.run_on_boot='1'
+uci -q set zapret2.config.WARP_ENABLED='1'
+uci -q set zapret2.config.WARP_TELEGRAM='1'
+
+# Включение игр по умолчанию (с возможностью отключения в LuCI)
+for g in WARZONE BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALORANT ROBLOX APEX_ROCKETLEAGUE UBISOFT LEAGUEOFLEGENDS WARFRAME DEADBYDAYLIGHT ARMA_REFORGER MINECRAFT CUSTOM; do
+    if [ -z "$(uci -q get zapret2.config.WARP_GAME_$g)" ]; then
+        uci set zapret2.config.WARP_GAME_$g='1'
+    fi
+done
+uci commit zapret2 2>/dev/null || true
+
+# 7. Запуск сервисов
+echo -e "\n${YELLOW}[5/6] Включение автозагрузки и запуск zapret2...${NC}"
+/etc/init.d/zapret2 enable 2>/dev/null || true
+/etc/init.d/zapret2 restart 2>/dev/null || true
+
+# Перезапуск веб-сервера LuCI для обновления интерфейса
+/etc/init.d/uhttpd restart 2>/dev/null || true
+/etc/init.d/rpcd restart 2>/dev/null || true
+
+# 8. Автоматический подбор эндпоинта с минимальным пингом
+echo -e "\n${YELLOW}[6/6] Сканирование серверов Cloudflare (WARP Scout)...${NC}"
+if [ -x "$INSTALL_DIR/warp.sh" ]; then
+    "$INSTALL_DIR/warp.sh" scout || true
+fi
+
+echo ""
+echo -e "${GREEN}======================================================================${NC}"
+echo -e "${BOLD}${GREEN}           🎉 Установка успешно завершена!                           ${NC}"
+echo -e "${GREEN}======================================================================${NC}"
+echo ""
+echo -e "Веб-интерфейс доступен в LuCI:"
+echo -e "  👉 ${BOLD}http://192.168.1.1${NC} -> меню ${CYAN}Службы${NC} -> ${CYAN}Zapret 2${NC}"
+echo -e "  👉 Вкладка ${CYAN}Cloudflare WARP (Games)${NC}: управление игровыми тумблерами"
+echo ""
+echo -e "Полезные команды:"
+echo -e "  - Проверить статус WARP:    ${BOLD}/opt/zapret2/warp.sh status${NC}"
+echo -e "  - Найти минимальный пинг:   ${BOLD}/opt/zapret2/warp.sh scout${NC}"
+echo -e "  - Логи автоподбора:         ${BOLD}tail -f /tmp/autolearn.log${NC}"
+echo -e "  - Логи WARP:                ${BOLD}cat /tmp/zapret2-warp.log${NC}"
+echo ""
