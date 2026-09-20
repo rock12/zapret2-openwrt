@@ -709,12 +709,6 @@ return view.extend({
         o.rmempty = false;
         o.default = 0;
 
-        o = s.taboption(tabname, form.Flag, 'WARP_GAMES', _('Route Games via WARP'));
-        o.description = _('Warzone / Call of Duty, Steam, Battle.net, EA, Epic Games, Riot, etc.');
-        o.rmempty = false;
-        o.default = 1;
-        o.depends('WARP_ENABLED', '1');
-
         o = s.taboption(tabname, form.Flag, 'WARP_TELEGRAM', _('Route Telegram via WARP'));
         o.description = _('Transparently route Telegram IP ranges through WARP (unblocks Telegram on all home devices)');
         o.rmempty = false;
@@ -798,7 +792,7 @@ return view.extend({
             o.description = filePath;
             o.rmempty = false;
             o.default = '1';
-            o.depends('WARP_GAMES', '1');
+            o.depends('WARP_ENABLED', '1');
 
             let origRender = o.renderWidget;
             o.renderWidget = function(section_id, option_index, cfgvalue) {
