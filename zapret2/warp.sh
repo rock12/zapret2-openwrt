@@ -445,7 +445,11 @@ game_uci_opt() {
 # Setup PBR routing tables and rules
 filter_ipv4_file() {
     [ -f "$1" ] || return 0
-    grep -oE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?' "$1" 2>/dev/null || true
+    # Extract valid IPv4, enforce /16 to /32 masks only (drops /0../15 wide cloud provider CIDRs),
+    # and strictly exclude private IPs, loopbacks, multicast, Cloudflare CDN (to avoid loops), and GitHub.
+    grep -oE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?' "$1" 2>/dev/null \
+        | grep -vE '/([0-9]|1[0-5])$' \
+        | grep -vE '^(0\.|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|104\.(1[6-9]|2[0-9]|3[0-1])\.|172\.(6[4-9]|7[0-1])\.|140\.82\.|8\.8\.|1\.1\.1\.1|1\.0\.0\.1|22[4-9]\.|2[3-5][0-9]\.)' || true
 }
 
 warp_pbr_up() {

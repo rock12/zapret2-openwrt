@@ -26,6 +26,10 @@ vk.ru
 vk.com
 yandex.ru
 ya.ru
+github.com
+githubusercontent.com
+raw.githubusercontent.com
+api.github.com
 ####################################
 max.ru
 web.max.ru

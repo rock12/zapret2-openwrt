@@ -160,24 +160,7 @@ resolve_and_learn() {
         fi
     fi
 
-    if [ "$tcp_syn_ok" = "1" ]; then
-        log "TCP рукопожатие успешно! Трафик $domain обрабатывается мульти-стратегией DPI (circular rotation)"
-    else
-        log "ВНИМАНИЕ: $domain ($first_ip) не отвечает на TCP SYN (вероятен бан по IP). Маршрутизация в WARP..."
-        if [ -x "$WARP_SH" ]; then
-            while read -r target; do
-                [ -n "$target" ] || continue
-                # Route specific IPs / subnets into Cloudflare WARP
-                if echo "$target" | grep -q '/'; then
-                    $WARP_SH add_target "$target" 2>/dev/null || true
-                else
-                    $WARP_SH add_target "$target/32" 2>/dev/null || true
-                fi
-            done < "$tmp_nets"
-            log "Все подсети $domain направлены в туннель Cloudflare WARP"
-        fi
-    fi
-
+    log "Все подсети и домен $domain успешно добавлены в список zapret (DPI desync)"
     rm -f "$tmp_ips" "$tmp_nets"
     return 0
 }
