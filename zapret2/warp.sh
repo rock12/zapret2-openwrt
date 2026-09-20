@@ -214,6 +214,7 @@ warp_scout() {
     local best_ip=""
     local best_ping=999999
     local best_port=2408
+    [ -x /usr/bin/awg ] && best_port=4500
     local results=""
 
     for ip in $candidates; do
@@ -227,7 +228,6 @@ warp_scout() {
             if [ "$rtt" -lt "$best_ping" ]; then
                 best_ping=$rtt
                 best_ip=$ip
-                best_port=2408
             fi
         fi
     done
@@ -237,14 +237,19 @@ warp_scout() {
         best_ep="$best_ip:$best_port"
         _log "Выбран наилучший игровой эндпоинт: $best_ep (минимальный пинг: ${best_ping}ms)"
     else
-        best_ep="8.34.70.2:2408"
+        best_ep="162.159.192.1:$best_port"
         _log "ICMP пинг не ответил, использован проверенный эндпоинт: $best_ep"
     fi
 
     printf '%s\n' "$best_ep" > "$WARP_DIR/endpoint"
     
-    # If wireguard is already configured in UCI, update it live
-    if uci -q get network.wireguard_warp >/dev/null; then
+    # If amneziawg or wireguard is already configured in UCI, update it live
+    if uci -q get network.amneziawg_warp >/dev/null; then
+        uci set network.amneziawg_warp.endpoint_host="${best_ep%:*}"
+        uci set network.amneziawg_warp.endpoint_port="${best_ep##*:}"
+        uci commit network
+        ifup warp 2>/dev/null || true
+    elif uci -q get network.wireguard_warp >/dev/null; then
         uci set network.wireguard_warp.endpoint_host="${best_ep%:*}"
         uci set network.wireguard_warp.endpoint_port="${best_ep##*:}"
         uci commit network
@@ -319,6 +324,14 @@ warp_uci_setup() {
 
         host="${ep%:*}"
         port="${ep##*:}"
+        if [ -s "$WARP_DIR/endpoint" ]; then
+            local scout_ep
+            scout_ep=$(cat "$WARP_DIR/endpoint" 2>/dev/null | tr -d ' \t\r\n')
+            if [ -n "$scout_ep" ] && echo "$scout_ep" | grep -q ':'; then
+                host="${scout_ep%:*}"
+                port="${scout_ep##*:}"
+            fi
+        fi
         v4=$(echo "$addr" | tr ',' '\n' | grep -v ':' | head -n1 | tr -d ' \t\r')
         v6=$(echo "$addr" | tr ',' '\n' | grep ':' | head -n1 | tr -d ' \t\r')
         v4="${v4%/*}"
