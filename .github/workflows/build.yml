@@ -48,8 +48,6 @@ jobs:
             openwrt_arches: i386_pentium4 i386_pentium-mmx x86_geode
           - bin_subdir: linux-riscv64
             openwrt_arches: riscv64_riscv64
-          - bin_subdir: linux-ppc
-            openwrt_arches: powerpc_8540 powerpc_464fp
     steps:
       - uses: actions/checkout@v7
 
@@ -76,7 +74,7 @@ jobs:
       - name: Download prebuilt zapret2 binaries
         run: |
           TAG="${{ needs.meta.outputs.tag }}"
-          wget -q "https://github.com/bol-van/zapret2/releases/download/${TAG}/zapret2-${TAG}-openwrt-embedded.tar.gz" -O emb.tar.gz
+          curl -fSL --retry 5 --retry-connrefused --retry-delay 2 "https://github.com/bol-van/zapret2/releases/download/${TAG}/zapret2-${TAG}-openwrt-embedded.tar.gz" -o emb.tar.gz
           mkdir -p emb
           tar xzf emb.tar.gz -C emb --strip-components=1
 
