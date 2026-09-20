@@ -123,21 +123,25 @@ if [ "$IS_LOCAL" = "1" ]; then
         cp -rf "$SCRIPT_DIR/luci-app-zapret2/root/"* / 2>/dev/null || true
     fi
 else
-    echo "      Загрузка актуальных файлов из GitHub (ветка zap1)..."
-    curl -sSL -m 15 "$REPO_RAW/zapret2/warp.sh" -o "$INSTALL_DIR/warp.sh"
-    curl -sSL -m 15 "$REPO_RAW/zapret2/autolearn-cidr.sh" -o "$INSTALL_DIR/autolearn-cidr.sh"
-    curl -sSL -m 15 "$REPO_RAW/zapret2/init.d.sh" -o /etc/init.d/zapret2
-    curl -sSL -m 15 "$REPO_RAW/zapret2/warp/WARP.conf" -o "$INSTALL_DIR/warp/WARP.conf" || true
-    curl -sSL -m 15 "$REPO_RAW/zapret2/warp/warp-endpoints.txt" -o "$INSTALL_DIR/warp/warp-endpoints.txt" || true
-    curl -sSL -m 15 "$REPO_RAW/zapret2/warp/telegram_ips.txt" -o "$INSTALL_DIR/warp/telegram_ips.txt" || true
-
-    mkdir -p /www/luci-static/resources/view/zapret2
-    mkdir -p /usr/share/luci/menu.d
-    mkdir -p /usr/share/rpcd/acl.d
-
-    curl -sSL -m 15 "$REPO_RAW/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/settings.js" -o /www/luci-static/resources/view/zapret2/settings.js || true
-    curl -sSL -m 15 "$REPO_RAW/luci-app-zapret2/root/usr/share/luci/menu.d/luci-app-zapret2.json" -o /usr/share/luci/menu.d/luci-app-zapret2.json || true
-    curl -sSL -m 15 "$REPO_RAW/luci-app-zapret2/root/usr/share/rpcd/acl.d/luci-app-zapret2.json" -o /usr/share/rpcd/acl.d/luci-app-zapret2.json || true
+    echo "      Загрузка полного архива из GitHub (ветка zap1)..."
+    TMP_SETUP="/tmp/zapret2-setup-$$"
+    mkdir -p "$TMP_SETUP"
+    if curl -fSL --retry 3 "https://github.com/rock12/zapret2-openwrt/archive/refs/heads/zap1.tar.gz" -o "$TMP_SETUP/repo.tar.gz"; then
+        tar -xzf "$TMP_SETUP/repo.tar.gz" -C "$TMP_SETUP" --strip-components=1
+        cp -rf "$TMP_SETUP/zapret2/"* "$INSTALL_DIR/" 2>/dev/null || true
+        cp -f "$TMP_SETUP/zapret2/init.d.sh" /etc/init.d/zapret2
+        if [ -d "$TMP_SETUP/luci-app-zapret2/htdocs" ]; then
+            mkdir -p /www/luci-static/resources/view/zapret2
+            cp -rf "$TMP_SETUP/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/"* /www/luci-static/resources/view/zapret2/ 2>/dev/null || true
+        fi
+        if [ -d "$TMP_SETUP/luci-app-zapret2/root" ]; then
+            cp -rf "$TMP_SETUP/luci-app-zapret2/root/"* / 2>/dev/null || true
+        fi
+        rm -rf "$TMP_SETUP"
+    else
+        echo -e "      ${RED}[ОШИБКА] Не удалось скачать архив репозитория!${NC}"
+        exit 1
+    fi
 fi
 
 # 5. Установка прав на исполнение
