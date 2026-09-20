@@ -220,37 +220,113 @@ check_install_deps() {
 # Configure OpenWrt interface 'warp'
 warp_uci_setup() {
     check_install_deps
-    [ -s "$WARP_DEV" ] || warp_register || return 1
     
     local priv v4 v6 ep host port
-    priv=$(_json_val "$WARP_DEV" private_key)
-    v4=$(_json_val "$WARP_DEV" v4)
-    v6=$(_json_val "$WARP_DEV" v6)
-    
-    [ -s "$WARP_DIR/endpoint" ] || warp_scout >/dev/null
-    ep=$(cat "$WARP_DIR/endpoint" 2>/dev/null || echo "162.159.192.1:2408")
-    host="${ep%:*}"
-    port="${ep##*:}"
+    local has_awg=0
+    if [ -x /usr/bin/awg ] && [ -r /root/WARP.conf ]; then
+        has_awg=1
+    fi
 
-    uci -q delete network.warp
-    uci -q delete network.wireguard_warp
-    
-    uci set network.warp=interface
-    uci set network.warp.proto='wireguard'
-    uci set network.warp.private_key="$priv"
-    uci add_list network.warp.addresses="${v4}/32"
-    [ -n "$v6" ] && uci add_list network.warp.addresses="${v6}/128"
-    uci set network.warp.disabled='0'
+    if [ "$has_awg" = "1" ]; then
+        _log "Настройка WARP с обфускацией AmneziaWG (пробитие блокировок DPI в РФ)..."
+        local jc jmin jmax s1 s2 h1 h2 h3 h4 i1
+        eval "$(awk '
+        BEGIN{ sec="" }
+        {
+          line=$0; sub(/[;#].*$/, "", line); gsub(/^[ \t]+|[ \t]+$/, "", line)
+          if (line=="") next
+          if (line ~ /^\[.*\]$/) { sec=tolower(substr(line,2,length(line)-2)); next }
+          idx=index(line,"="); if (idx==0) next
+          k=tolower(substr(line,1,idx-1)); v=substr(line,idx+1)
+          gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v)
+          if (sec=="interface") {
+            if (k=="privatekey") print "priv=\"" v "\""
+            if (k=="address") print "addr=\"" v "\""
+            if (k=="mtu") print "mtu=\"" v "\""
+            if (k=="jc") print "jc=\"" v "\""
+            if (k=="jmin") print "jmin=\"" v "\""
+            if (k=="jmax") print "jmax=\"" v "\""
+            if (k=="s1") print "s1=\"" v "\""
+            if (k=="s2") print "s2=\"" v "\""
+            if (k=="h1") print "h1=\"" v "\""
+            if (k=="h2") print "h2=\"" v "\""
+            if (k=="h3") print "h3=\"" v "\""
+            if (k=="h4") print "h4=\"" v "\""
+            if (k=="i1") print "i1=\"" v "\""
+          } else if (sec=="peer") {
+            if (k=="publickey") print "pub=\"" v "\""
+            if (k=="endpoint") print "ep=\"" v "\""
+          }
+        }
+        ' /root/WARP.conf)"
 
-    uci set network.wireguard_warp=wireguard_warp
-    uci set network.wireguard_warp.name='warp_peer'
-    uci set network.wireguard_warp.public_key="$CF_PUBKEY"
-    uci set network.wireguard_warp.endpoint_host="$host"
-    uci set network.wireguard_warp.endpoint_port="$port"
-    uci set network.wireguard_warp.route_allowed_ips='0'
-    uci set network.wireguard_warp.persistent_keepalive='25'
-    uci add_list network.wireguard_warp.allowed_ips='0.0.0.0/0'
-    uci add_list network.wireguard_warp.allowed_ips='::/0'
+        host="${ep%:*}"
+        port="${ep##*:}"
+        v4="172.16.0.2"
+        v6="2606:4700:110:8a97:2d25:5c57:21d0:1444"
+
+        uci -q delete network.warp
+        uci -q delete network.amneziawg_warp
+        uci -q delete network.wireguard_warp
+
+        uci set network.warp=interface
+        uci set network.warp.proto='amneziawg'
+        uci set network.warp.private_key="$priv"
+        uci set network.warp.mtu="${mtu:-1280}"
+        uci add_list network.warp.addresses="${v4}/32"
+        uci add_list network.warp.addresses="${v6}/128"
+        [ -n "$jc" ] && uci set network.warp.awg_jc="$jc"
+        [ -n "$jmin" ] && uci set network.warp.awg_jmin="$jmin"
+        [ -n "$jmax" ] && uci set network.warp.awg_jmax="$jmax"
+        [ -n "$s1" ] && uci set network.warp.awg_s1="$s1"
+        [ -n "$s2" ] && uci set network.warp.awg_s2="$s2"
+        [ -n "$h1" ] && uci set network.warp.awg_h1="$h1"
+        [ -n "$h2" ] && uci set network.warp.awg_h2="$h2"
+        [ -n "$h3" ] && uci set network.warp.awg_h3="$h3"
+        [ -n "$h4" ] && uci set network.warp.awg_h4="$h4"
+        [ -n "$i1" ] && uci set network.warp.awg_i1="$i1"
+
+        uci set network.amneziawg_warp=amneziawg_warp
+        uci set network.amneziawg_warp.name='warp_peer'
+        uci set network.amneziawg_warp.public_key="${pub:-$CF_PUBKEY}"
+        uci set network.amneziawg_warp.endpoint_host="$host"
+        uci set network.amneziawg_warp.endpoint_port="$port"
+        uci set network.amneziawg_warp.route_allowed_ips='0'
+        uci set network.amneziawg_warp.persistent_keepalive='25'
+        uci add_list network.amneziawg_warp.allowed_ips='0.0.0.0/0'
+        uci add_list network.amneziawg_warp.allowed_ips='::/0'
+    else
+        [ -s "$WARP_DEV" ] || warp_register || return 1
+        priv=$(_json_val "$WARP_DEV" private_key)
+        v4=$(_json_val "$WARP_DEV" v4)
+        v6=$(_json_val "$WARP_DEV" v6)
+        
+        [ -s "$WARP_DIR/endpoint" ] || warp_scout >/dev/null
+        ep=$(cat "$WARP_DIR/endpoint" 2>/dev/null || echo "162.159.192.1:2408")
+        host="${ep%:*}"
+        port="${ep##*:}"
+
+        uci -q delete network.warp
+        uci -q delete network.wireguard_warp
+        uci -q delete network.amneziawg_warp
+        
+        uci set network.warp=interface
+        uci set network.warp.proto='wireguard'
+        uci set network.warp.private_key="$priv"
+        uci add_list network.warp.addresses="${v4}/32"
+        [ -n "$v6" ] && uci add_list network.warp.addresses="${v6}/128"
+        uci set network.warp.disabled='0'
+
+        uci set network.wireguard_warp=wireguard_warp
+        uci set network.wireguard_warp.name='warp_peer'
+        uci set network.wireguard_warp.public_key="$CF_PUBKEY"
+        uci set network.wireguard_warp.endpoint_host="$host"
+        uci set network.wireguard_warp.endpoint_port="$port"
+        uci set network.wireguard_warp.route_allowed_ips='0'
+        uci set network.wireguard_warp.persistent_keepalive='25'
+        uci add_list network.wireguard_warp.allowed_ips='0.0.0.0/0'
+        uci add_list network.wireguard_warp.allowed_ips='::/0'
+    fi
 
     uci commit network
 
@@ -379,10 +455,16 @@ warp_add_target() {
         echo "$target" >> "$WARP_DIR/auto_targets.txt"
     fi
 
+    ip route replace default dev warp table "$WARP_TABLE" 2>/dev/null || true
+
     if [ -x /sbin/fw4 ]; then
         nft add table inet zapret2_warp 2>/dev/null || true
         nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; }' 2>/dev/null || true
         nft add element inet zapret2_warp warp_targets { "$target" } 2>/dev/null || true
+        nft add chain inet zapret2_warp prerouting '{ type filter hook prerouting priority mangle - 1; policy accept; }' 2>/dev/null || true
+        nft add rule inet zapret2_warp prerouting ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
+        nft add chain inet zapret2_warp output '{ type filter hook output priority mangle - 1; policy accept; }' 2>/dev/null || true
+        nft add rule inet zapret2_warp output ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
     else
         ipset add warp_targets "$target" 2>/dev/null || true
     fi

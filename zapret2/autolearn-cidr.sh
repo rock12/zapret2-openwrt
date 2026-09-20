@@ -186,6 +186,36 @@ run_daemon() {
             done < "$AUTOHOSTS"
         fi
 
+        # 3. Check conntrack for hard IP bans (TCP SYN_SENT [UNREPLIED])
+        if [ -r /proc/net/nf_conntrack ]; then
+            awk '
+                /tcp/ && /SYN_SENT/ && /\[UNREPLIED\]/ {
+                    for (i=1; i<=NF; i++) {
+                        if ($i ~ /^dst=/) {
+                            sub(/^dst=/, "", $i)
+                            if ($i !~ /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.|255\.|0\.)/) {
+                                print $i
+                            }
+                        }
+                    }
+                }
+            ' /proc/net/nf_conntrack | sort -u | while read -r dead_ip; do
+                [ -n "$dead_ip" ] || continue
+                if grep -q "^$dead_ip$" "$SEEN_FILE" 2>/dev/null; then
+                    continue
+                fi
+                echo "$dead_ip" >> "$SEEN_FILE"
+
+                # Verify if WAN TCP SYN times out (hard IP block)
+                if ! nc -w 1 "$dead_ip" 443 </dev/null >/dev/null 2>&1; then
+                    log "Обнаружен сбой TCP SYN к IP $dead_ip (вероятен IP бан). Автоматическое перенаправление в WARP..."
+                    if [ -x /opt/zapret2/warp.sh ]; then
+                        /opt/zapret2/warp.sh add_target "$dead_ip"
+                    fi
+                fi
+            done
+        fi
+
         sleep 2
     done
 }
