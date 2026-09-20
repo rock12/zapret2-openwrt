@@ -343,6 +343,32 @@ warp_uci_setup() {
     return 0
 }
 
+game_uci_opt() {
+    local gbase="$1"
+    case "$gbase" in
+        Warzone_CallOfDuty)        echo "WARP_GAME_WARZONE" ;;
+        Battlefield6)              echo "WARP_GAME_BATTLEFIELD6" ;;
+        Steam)                     echo "WARP_GAME_STEAM" ;;
+        EA_Origin)                 echo "WARP_GAME_EA_ORIGIN" ;;
+        BattleNet)                 echo "WARP_GAME_BATTLENET" ;;
+        EpicGames_Fortnite)        echo "WARP_GAME_EPIC_FORTNITE" ;;
+        RiotGames_Valorant)        echo "WARP_GAME_RIOT_VALORANT" ;;
+        ApexLegends_RocketLeague)  echo "WARP_GAME_APEX_ROCKETLEAGUE" ;;
+        Ubisoft_Rainbow_Six_Siege) echo "WARP_GAME_UBISOFT" ;;
+        Roblox)                    echo "WARP_GAME_ROBLOX" ;;
+        LeagueOfLegends)           echo "WARP_GAME_LEAGUEOFLEGENDS" ;;
+        Warframe)                  echo "WARP_GAME_WARFRAME" ;;
+        DeadByDaylight)            echo "WARP_GAME_DEADBYDAYLIGHT" ;;
+        ArmaReforger)              echo "WARP_GAME_ARMA_REFORGER" ;;
+        Minecraft_Extra)           echo "WARP_GAME_MINECRAFT" ;;
+        *)
+            local clean_name
+            clean_name=$(echo "$gbase" | tr 'a-z' 'A-Z' | tr -c 'A-Z0-9_' '_')
+            echo "WARP_GAME_$clean_name"
+            ;;
+    esac
+}
+
 # Setup PBR routing tables and rules
 warp_pbr_up() {
     _log "Активация PBR маршрутизации в WARP (таблица $WARP_TABLE)..."
@@ -372,9 +398,43 @@ warp_pbr_up() {
         fi
         
         if [ "$route_games" != "0" ]; then
-            for gfile in "$GAMES_DIR"/*.txt "$WARP_DIR/games_user.txt" "$WARP_DIR/auto_targets.txt"; do
+            # 1. Custom user games
+            if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM || echo 1)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
+                for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$WARP_DIR/games_user.txt" | grep -v ':'); do
+                    [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
+                    first=0
+                    printf '%s' "$cidr" >> "$tmp_nft"
+                done
+            fi
+
+            # 2. Check each game file in $GAMES_DIR against individual UCI toggles
+            for gfile in "$GAMES_DIR"/*.txt; do
                 [ -f "$gfile" ] || continue
-                for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$gfile" | grep -v ':'); do
+                local gbase opt is_enabled
+                gbase="$(basename "$gfile" .txt)"
+                opt=$(game_uci_opt "$gbase")
+                is_enabled=$(uci -q get "zapret2.config.$opt")
+                if [ -z "$is_enabled" ]; then
+                    case "$opt" in
+                        WARP_GAME_WARZONE|WARP_GAME_BATTLEFIELD6) is_enabled=1 ;;
+                        *) is_enabled=0 ;;
+                    esac
+                fi
+
+                if [ "$is_enabled" = "1" ]; then
+                    _log "Маршрутизация WARP ВКЛЮЧЕНА для: $gbase ($opt=1)"
+                    for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$gfile" | grep -v ':'); do
+                        [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
+                        first=0
+                        printf '%s' "$cidr" >> "$tmp_nft"
+                    done
+                fi
+            done
+
+            # 3. Dynamic failover targets
+            for autotgt in "$WARP_DIR/auto_targets.txt" /tmp/warp_targets.txt; do
+                [ -f "$autotgt" ] || continue
+                for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$autotgt" | grep -v ':'); do
                     [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
                     first=0
                     printf '%s' "$cidr" >> "$tmp_nft"
@@ -390,6 +450,8 @@ warp_pbr_up() {
 
         nft add chain inet zapret2_warp prerouting '{ type filter hook prerouting priority mangle - 1; }' 2>/dev/null || true
         nft add rule inet zapret2_warp prerouting ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
+        nft add chain inet zapret2_warp output '{ type filter hook output priority mangle - 1; }' 2>/dev/null || true
+        nft add rule inet zapret2_warp output ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
     else
         ipset create warp_targets hash:net maxelem 65536 2>/dev/null || ipset flush warp_targets 2>/dev/null || true
         local route_games="$(uci -q get zapret2.config.WARP_GAMES || echo 1)"
@@ -399,9 +461,24 @@ warp_pbr_up() {
             grep -vE '^[[:space:]]*(#|$)' "$TG_IPS" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
         fi
         if [ "$route_games" != "0" ]; then
-            for gf in "$GAMES_DIR"/*.txt "$WARP_DIR/games_user.txt"; do
+            if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM || echo 1)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
+                grep -vE '^[[:space:]]*(#|$)' "$WARP_DIR/games_user.txt" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+            fi
+            for gf in "$GAMES_DIR"/*.txt; do
                 [ -f "$gf" ] || continue
-                grep -vE '^[[:space:]]*(#|$)' "$gf" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+                local gb opt is_en
+                gb="$(basename "$gf" .txt)"
+                opt=$(game_uci_opt "$gb")
+                is_en=$(uci -q get "zapret2.config.$opt")
+                if [ -z "$is_en" ]; then
+                    case "$opt" in
+                        WARP_GAME_WARZONE|WARP_GAME_BATTLEFIELD6) is_en=1 ;;
+                        *) is_en=0 ;;
+                    esac
+                fi
+                if [ "$is_en" = "1" ]; then
+                    grep -vE '^[[:space:]]*(#|$)' "$gf" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+                fi
             done
         fi
         iptables -t mangle -D PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
@@ -481,6 +558,7 @@ case "$1" in
     pbr_down)   warp_pbr_down ;;
     status)     warp_status ;;
     add_target) shift; warp_add_target "$@" ;;
+    reload)     warp_pbr_up ;;
     restart)    warp_down; warp_up ;;
-    *) echo "usage: $0 {register|import|scout|up|down|restart|status}" >&2; exit 1 ;;
+    *) echo "usage: $0 {register|import|scout|up|down|reload|restart|status|add_target}" >&2; exit 1 ;;
 esac

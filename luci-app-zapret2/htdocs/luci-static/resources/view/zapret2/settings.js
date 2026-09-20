@@ -770,96 +770,48 @@ return view.extend({
 
         o = s.taboption(tabname, form.DummyValue, '_gaming_lists_header');
         o.rawhtml = true;
-        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Gaming & Telegram IP Lists (Click to View / Edit)') + '</h3>';
+        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Игровые сервисы через WARP (Индивидуальные тумблеры)') + '</h3>' +
+                    '<p class="description">' + _('Включайте или выключайте маршрутизацию через WARP для конкретных игр тумблерами ниже. При необходимости можно просмотреть или отредактировать подсети IP.') + '</p>';
 
-        o = s.taboption(tabname, form.Button, '_edit_warzone_btn', _('Warzone / Call of Duty (772 subnets)'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/Warzone_CallOfDuty.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/Warzone_CallOfDuty.txt',
-            title: _('Warzone / Call of Duty IP CIDRs (772 subnets)'),
-            desc: _('Full CIDR range list for Call of Duty Warzone servers.<br />One subnet per line.'),
-            rows: 20,
-        }).show();
+        const warpGames = [
+            { id: 'WARP_GAME_WARZONE', file: 'Warzone_CallOfDuty.txt', title: _('Call of Duty: Warzone & Modern Warfare'), desc: _('Серверы матчей и лобби Warzone (772 подсети)'), def: '1' },
+            { id: 'WARP_GAME_BATTLEFIELD6', file: 'Battlefield6.txt', title: _('Battlefield 6 / 2042 (EA DICE)'), desc: _('Выделенные серверы и матчмейкинг серии Battlefield'), def: '1' },
+            { id: 'WARP_GAME_STEAM', file: 'Steam.txt', title: _('Steam (Игры и голосовые чаты)'), desc: _('Сетевые реле и серверы сообщества Steam'), def: '0' },
+            { id: 'WARP_GAME_EA_ORIGIN', file: 'EA_Origin.txt', title: _('EA App / Origin'), desc: _('Сетевая инфраструктура Electronic Arts'), def: '0' },
+            { id: 'WARP_GAME_BATTLENET', file: 'BattleNet.txt', title: _('Battle.net / Blizzard'), desc: _('Серверы авторизации и матчей Blizzard'), def: '0' },
+            { id: 'WARP_GAME_EPIC_FORTNITE', file: 'EpicGames_Fortnite.txt', title: _('Epic Games / Fortnite'), desc: _('Серверы матчей Fortnite и Unreal Engine Network'), def: '0' },
+            { id: 'WARP_GAME_RIOT_VALORANT', file: 'RiotGames_Valorant.txt', title: _('Riot Games / Valorant'), desc: _('Серверы Valorant и Riot Direct'), def: '0' },
+            { id: 'WARP_GAME_APEX_ROCKETLEAGUE', file: 'ApexLegends_RocketLeague.txt', title: _('Apex Legends & Rocket League'), desc: _('Серверы Respawn Entertainment и Psyonix'), def: '0' },
+            { id: 'WARP_GAME_UBISOFT', file: 'Ubisoft_Rainbow_Six_Siege.txt', title: _('Ubisoft / Rainbow Six Siege'), desc: _('Серверы матчей Ubisoft Connect и R6'), def: '0' },
+            { id: 'WARP_GAME_ROBLOX', file: 'Roblox.txt', title: _('Roblox'), desc: _('Многопользовательские кластеры Roblox'), def: '0' },
+            { id: 'WARP_GAME_LEAGUEOFLEGENDS', file: 'LeagueOfLegends.txt', title: _('League of Legends'), desc: _('Матчмейкинг и игровые серверы LoL'), def: '0' },
+            { id: 'WARP_GAME_WARFRAME', file: 'Warframe.txt', title: _('Warframe'), desc: _('Реле и выделенные серверы Warframe'), def: '0' },
+            { id: 'WARP_GAME_DEADBYDAYLIGHT', file: 'DeadByDaylight.txt', title: _('Dead By Daylight'), desc: _('Серверы матчей Behaviour Interactive'), def: '0' },
+            { id: 'WARP_GAME_ARMA_REFORGER', file: 'ArmaReforger.txt', title: _('Arma Reforger'), desc: _('Сетевые реле Bohemia Interactive'), def: '0' },
+            { id: 'WARP_GAME_MINECRAFT', file: 'Minecraft_Extra.txt', title: _('Minecraft Extra'), desc: _('Серверы Bedrock и сторонние игровые хабы'), def: '0' },
+            { id: 'WARP_GAME_CUSTOM', file: '../games_user.txt', title: _('Пользовательский список игровых IP (Custom)'), desc: _('Собственные подсети игровых серверов пользователя'), def: '1' },
+        ];
 
-        
-        o = s.taboption(tabname, form.Button, '_edit_steam_btn', _('Steam IP Ranges'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/Steam.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/Steam.txt',
-            title: _('Steam Game & Voice Servers'),
-            desc: _('Steam servers list.<br />One subnet per line.'),
-            rows: 15,
-        }).show();
+        warpGames.forEach(g => {
+            o = s.taboption(tabname, form.Flag, g.id, g.title);
+            o.description = g.desc;
+            o.rmempty = false;
+            o.default = g.def;
+            o.depends('WARP_GAMES', '1');
 
-        o = s.taboption(tabname, form.Button, '_edit_ea_btn', _('EA / Origin IP Ranges'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/EA_Origin.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/EA_Origin.txt',
-            title: _('EA & Origin Game Servers'),
-            desc: _('EA/Origin servers list.<br />One subnet per line.'),
-            rows: 15,
-        }).show();
-
-        o = s.taboption(tabname, form.Button, '_edit_battlenet_btn', _('Battle.net / Blizzard IP Ranges'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/BattleNet.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/BattleNet.txt',
-            title: _('Battle.net / Blizzard Servers'),
-            desc: _('Blizzard game servers list.<br />One subnet per line.'),
-            rows: 15,
-        }).show();
-
-        o = s.taboption(tabname, form.Button, '_edit_epic_btn', _('Epic Games & Fortnite IP Ranges'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/EpicGames_Fortnite.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/EpicGames_Fortnite.txt',
-            title: _('Epic Games & Fortnite Servers'),
-            desc: _('Epic Games servers list.<br />One subnet per line.'),
-            rows: 15,
-        }).show();
-
-        o = s.taboption(tabname, form.Button, '_edit_riot_btn', _('Riot Games & Valorant IP Ranges'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/RiotGames_Valorant.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/RiotGames_Valorant.txt',
-            title: _('Riot Games & Valorant Servers'),
-            desc: _('Riot Games servers list.<br />One subnet per line.'),
-            rows: 15,
-        }).show();
-
-        o = s.taboption(tabname, form.Button, '_edit_roblox_btn', _('Roblox IP Ranges'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games/Roblox.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games/Roblox.txt',
-            title: _('Roblox Game Servers'),
-            desc: _('Roblox servers list.<br />One subnet per line.'),
-            rows: 15,
-        }).show();
-
-        o = s.taboption(tabname, form.Button, '_edit_custom_games_btn', _('Custom Gaming IP List (User Added)'));
-        o.inputtitle = _('View / Edit');
-        o.inputstyle = 'edit btn';
-        o.description = '/opt/zapret2/warp/games_user.txt';
-        o.onclick = () => new tools.fileEditDialog({
-            file: '/opt/zapret2/warp/games_user.txt',
-            title: _('Custom Gaming IP List'),
-            desc: _('Add any custom game server IP subnets you wish to route via WARP.<br />One CIDR per line.'),
-            rows: 15,
-        }).show();
+            let filePath = g.file.startsWith('/') ? g.file : (g.file.startsWith('../') ? '/opt/zapret2/warp/' + g.file.substring(3) : '/opt/zapret2/warp/games/' + g.file);
+            let btn = s.taboption(tabname, form.Button, '_edit_' + g.id + '_btn', '  ⤷ ' + _('Правка IP: ') + g.title);
+            btn.inputtitle = _('View / Edit IPs');
+            btn.inputstyle = 'edit btn';
+            btn.description = filePath;
+            btn.depends('WARP_GAMES', '1');
+            btn.onclick = () => new tools.fileEditDialog({
+                file: filePath,
+                title: g.title,
+                desc: g.desc + '<br />' + _('One CIDR / subnet per line.'),
+                rows: 15,
+            }).show();
+        });
 
         /* Telegram Proxy (TG WS Proxy) tab */
 
