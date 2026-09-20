@@ -7,6 +7,7 @@
 AUTOHOSTS="/opt/zapret2/ipset/zapret-hosts-auto.txt"
 AUTOHOSTS_DEBUG="/opt/zapret2/ipset/zapret-hosts-auto-debug.log"
 AUTO_CIDR_LIST="/opt/zapret2/ipset/zapret-hosts-auto-cidr.txt"
+EXCLUDE_HOSTS="/opt/zapret2/ipset/zapret-hosts-user-exclude.txt"
 MDIG="/opt/zapret2/mdig/mdig"
 IP2NET="/opt/zapret2/ip2net/ip2net"
 WARP_SH="/opt/zapret2/warp.sh"
@@ -40,7 +41,13 @@ resolve_and_learn() {
     fi
 
     # Strip protocol or trailing slashes if passed as URL
-    domain=$(echo "$domain" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||' | tr '[:upper:]' '[:lower:]')
+    domain=$(echo "$domain" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||' | tr 'A-Z' 'a-z')
+
+    # If already in exclude list, skip
+    if grep -q "^$domain$" "$EXCLUDE_HOSTS" 2>/dev/null; then
+        log "Пропуск: $domain уже в списке исключений"
+        return 0
+    fi
 
     log "=== Определение домена и CIDR подсетей: $domain ==="
 
@@ -84,7 +91,40 @@ resolve_and_learn() {
 
     sort -u -o "$tmp_nets" "$tmp_nets"
 
-    # 2. Inject all resolved IPs & CIDRs into nftables set 'zapret'
+    local first_ip
+    first_ip=$(head -n 1 "$tmp_ips")
+
+    # 2. Test DIRECT reachability on WAN (check if site works without desync)
+    local direct_ok=0
+    local http_code
+    http_code=$(curl -s -k -o /dev/null -w "%{http_code}" --connect-timeout 2 -m 3 --resolve "$domain:443:$first_ip" "https://$domain" 2>/dev/null || echo "000")
+
+    case "$http_code" in
+        200|301|302|304|307|308|401|403|404|405|418)
+            local redir_loc
+            redir_loc=$(curl -sI -k --connect-timeout 2 -m 3 --resolve "$domain:443:$first_ip" "https://$domain" 2>/dev/null | grep -i '^location:' | head -n 1)
+            if ! echo "$redir_loc" | grep -qiE 'warning\.|eais\.|block|zapret|denied|stub|ertelecom'; then
+                direct_ok=1
+            fi
+            ;;
+    esac
+
+    if [ "$direct_ok" = "1" ]; then
+        log "Ресурс $domain ($first_ip) доступен напрямую (HTTP $http_code). Добавлен в EXCLUDE (FastPath)."
+        if ! grep -q "^$domain$" "$EXCLUDE_HOSTS" 2>/dev/null; then
+            echo "$domain" >> "$EXCLUDE_HOSTS"
+        fi
+        while read -r target; do
+            [ -n "$target" ] || continue
+            nft add element inet zapret2 nozapret { "$target" } 2>/dev/null || true
+            nft delete element inet zapret2 zapret { "$target" } 2>/dev/null || true
+        done < "$tmp_nets"
+        sed -i "/^$domain$/d" "$AUTOHOSTS" 2>/dev/null || true
+        rm -f "$tmp_ips" "$tmp_nets"
+        return 0
+    fi
+
+    # 3. If direct connection fails, inject all resolved IPs & CIDRs into nftables set 'zapret'
     local added_count=0
     touch "$AUTO_CIDR_LIST"
     while read -r target; do
