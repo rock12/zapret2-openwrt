@@ -1,4 +1,8 @@
 ####################################
+ru
+su
+xn--p1ai
+xn--d1acj3b
 cloudflare-dns.com
 dns.google
 dns.nextdns.io

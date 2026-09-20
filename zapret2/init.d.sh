@@ -83,10 +83,10 @@ function start
 	init_before_start "$DAEMON_LOG_ENABLE" "$DAEMON_LOG_SIZE_MAX"
 	/bin/sh /etc/rc.common $ZAPRET_ORIG_INITD start "$@"
 	if [ -x /opt/zapret2/warp.sh ] && [ "$(uci -q get zapret2.config.WARP_ENABLED)" = "1" ]; then
-		/opt/zapret2/warp.sh up >/dev/null 2>&1 &
+		(exec 1000>&-; /opt/zapret2/warp.sh up >/dev/null 2>&1) &
 	fi
 	if [ -x /opt/zapret2/autolearn-daemon.sh ]; then
-		/opt/zapret2/autolearn-daemon.sh >/dev/null 2>&1 &
+		(exec 1000>&-; /opt/zapret2/autolearn-daemon.sh >/dev/null 2>&1) &
 	fi
 }
 
@@ -105,13 +105,13 @@ function restart
 	/bin/sh /etc/rc.common $ZAPRET_ORIG_INITD restart "$@"
 	if [ -x /opt/zapret2/warp.sh ]; then
 		if [ "$(uci -q get zapret2.config.WARP_ENABLED)" = "1" ]; then
-			/opt/zapret2/warp.sh up >/dev/null 2>&1 &
+			(exec 1000>&-; /opt/zapret2/warp.sh up >/dev/null 2>&1) &
 		else
 			/opt/zapret2/warp.sh down >/dev/null 2>&1 || true
 		fi
 	fi
 	killall autolearn-daemon.sh 2>/dev/null || true
 	if [ -x /opt/zapret2/autolearn-daemon.sh ]; then
-		/opt/zapret2/autolearn-daemon.sh >/dev/null 2>&1 &
+		(exec 1000>&-; /opt/zapret2/autolearn-daemon.sh >/dev/null 2>&1) &
 	fi
 }

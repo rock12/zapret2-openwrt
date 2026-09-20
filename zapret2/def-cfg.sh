@@ -582,7 +582,7 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
 				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
-				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=1
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld
 				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
 				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
 			"
