@@ -206,11 +206,21 @@ run_daemon() {
                 fi
                 echo "$dead_ip" >> "$SEEN_FILE"
 
-                # Verify if WAN TCP SYN times out (hard IP block)
-                if ! nc -w 1 "$dead_ip" 443 </dev/null >/dev/null 2>&1; then
-                    log "Обнаружен сбой TCP SYN к IP $dead_ip (вероятен IP бан). Автоматическое перенаправление в WARP..."
-                    if [ -x /opt/zapret2/warp.sh ]; then
-                        /opt/zapret2/warp.sh add_target "$dead_ip"
+                # Skip Google / YouTube IP ranges (already handled by DPI desync, WARP causes bot-detection)
+                case "$dead_ip" in
+                    142.250.*|142.251.*|172.217.*|172.253.*|216.58.*|64.233.*|74.125.*)
+                        continue
+                        ;;
+                esac
+
+                # Verify if WAN TCP SYN times out (hard IP block) with 3s timeout and retry
+                if ! nc -w 3 "$dead_ip" 443 </dev/null >/dev/null 2>&1; then
+                    sleep 1
+                    if ! nc -w 3 "$dead_ip" 443 </dev/null >/dev/null 2>&1; then
+                        log "Обнаружен подтвержденный IP-бан (TCP SYN drop) к $dead_ip. Автоматическое перенаправление в WARP..."
+                        if [ -x /opt/zapret2/warp.sh ]; then
+                            /opt/zapret2/warp.sh add_target "$dead_ip"
+                        fi
                     fi
                 fi
             done
