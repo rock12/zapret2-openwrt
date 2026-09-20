@@ -85,10 +85,14 @@ function start
 	if [ -x /opt/zapret2/warp.sh ] && [ "$(uci -q get zapret2.config.WARP_ENABLED)" = "1" ]; then
 		/opt/zapret2/warp.sh up >/dev/null 2>&1 &
 	fi
+	if [ -x /opt/zapret2/autolearn-daemon.sh ]; then
+		/opt/zapret2/autolearn-daemon.sh >/dev/null 2>&1 &
+	fi
 }
 
 function stop
 {
+	killall autolearn-daemon.sh 2>/dev/null || true
 	if [ -x /opt/zapret2/warp.sh ]; then
 		/opt/zapret2/warp.sh down >/dev/null 2>&1 || true
 	fi
@@ -105,5 +109,9 @@ function restart
 		else
 			/opt/zapret2/warp.sh down >/dev/null 2>&1 || true
 		fi
+	fi
+	killall autolearn-daemon.sh 2>/dev/null || true
+	if [ -x /opt/zapret2/autolearn-daemon.sh ]; then
+		/opt/zapret2/autolearn-daemon.sh >/dev/null 2>&1 &
 	fi
 }

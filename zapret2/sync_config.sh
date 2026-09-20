@@ -138,6 +138,15 @@ if [ $ZAPRET_CFG_NAME = "zapret2" ]; then
 	sync_param WARP_ENABLED
 	sync_param WARP_GAMES
 	sync_param WARP_TELEGRAM
+
+	# Append custom learned strategies
+	if [ -s "$EXE_DIR/custom_strats.txt" ]; then
+		custom_opts=$(cat "$EXE_DIR/custom_strats.txt" | tr '\n' ' ')
+		if [ -n "$custom_opts" ]; then
+			cur_opt=$(grep "^NFQWS2_OPT=" "$ZAPRET_CONFIG" | sed -e 's/^NFQWS2_OPT="//' -e 's/"$//')
+			set_param_value_str NFQWS2_OPT "$cur_opt $custom_opts" "$ZAPRET_CONFIG"
+		fi
+	fi
 fi
 
 ZAPRET_CONFIG="$ZAPRET_CONFIG__SAVED"
