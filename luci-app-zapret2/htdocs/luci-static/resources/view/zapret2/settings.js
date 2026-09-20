@@ -275,18 +275,24 @@ return view.extend({
         add_delim(s);
 
         o = s.taboption(tabname, form.ListValue, '_strat_selector', _('Preset Strategy / Auto-Rotation'));
-        o.description = _('Select an anti-DPI strategy preset. "z2-ready-05" is verified to fix YouTube 4K and Discord without TLS protocol errors.');
+        o.description = _('Select an anti-DPI strategy preset. "z2k_autocircular" (Keenetic Multi-Profile) automatically rotates bypass techniques if blocks occur.');
         o.value('-', _('-- Select Strategy Preset to Apply --'));
-        o.value('z2_ready_05', '⚡ ' + _('z2-ready-05 (Multisplit sequence overlap - Fix YouTube & Discord)'));
-        o.value('zm_games', '🎮 ' + _('Zapret-Manager Game Filter (Warzone, Apex, Battlefield, Roblox, Steam, EA)'));
+        o.value('z2k_autocircular', '🌟 ' + _('Z2K Auto-Rotation (Официальный мульти-профиль Keenetic: Google Fonts + Zero ACK + Ozon + Discord UDP)'));
+        o.value('z2_ready_03', '⭐ ' + _('z2-ready-03 (Fake Timestamp + Multisplit — Топ результат autotune 8/10)'));
+        o.value('zm_alt', '⭐ ' + _('Zapret-Manager ALT (Fake + Fakedsplit ts — Топ результат autotune 8/10)'));
+        o.value('z2_ready_05', '⚡ ' + _('z2-ready-05 (Multisplit sequence overlap — YouTube & Discord)'));
+        o.value('flowseal_general', '🔥 ' + _('Flowseal Classic (YouTube 4K + Discord Voice)'));
+        o.value('youtube_discord_ultimate', '🎯 ' + _('YouTube & Discord Ultimate'));
         o.value('zm_discord_media', '🎙️ ' + _('Zapret-Manager Discord Voice & Media (QUIC/STUN 50000+)'));
+        o.value('zm_games', '🎮 ' + _('Zapret-Manager Game Filter (Warzone, Apex, Battlefield, Roblox, Steam, EA)'));
+        o.value('zm_martin_backer', '⚡ ' + _('Zapret-Manager MartinBacker (Multi-Strategy Circular)'));
+        o.value('zm_uvvi2', '⚡ ' + _('Zapret-Manager Uvvi2 (Targeted Voice + Circular)'));
         o.value('zm_yv01', '▶️ ' + _('Zapret-Manager Yv01 (Google TLS Fake + Multisplit seqovl=681)'));
         o.value('zm_yv02', '▶️ ' + _('Zapret-Manager Yv02 (Multisplit pos=1,sniext+1 seqovl=1)'));
         o.value('zm_yv03', '▶️ ' + _('Zapret-Manager Yv03 (Hex 0x0F Fake + Multisplit seqovl=620)'));
         o.value('zm_yv08', '▶️ ' + _('Zapret-Manager Yv08 (Hostfakesplit google.com tcp_ts=-600000)'));
         o.value('zm_yv16', '▶️ ' + _('Zapret-Manager Yv16 (Multisplit pos=1,sniext+1 badsum)'));
         o.value('zm_yv24', '▶️ ' + _('Zapret-Manager Yv24 (STUN Fake badsum + Multisplit seqovl=654)'));
-        o.value('zm_alt', '⚡ ' + _('Zapret-Manager ALT (Fake + Fakedsplit ts)'));
         o.value('zm_alt2', '⚡ ' + _('Zapret-Manager ALT2 (Multisplit seqovl=652 pos=2)'));
         o.value('zm_alt3', '⚡ ' + _('Zapret-Manager ALT3 (Fake ya.ru + Hostfakesplit ts)'));
         o.value('zm_alt4', '⚡ ' + _('Zapret-Manager ALT4 (Fake badseq 1000 + Multisplit)'));
@@ -308,25 +314,19 @@ return view.extend({
         o.value('zm_simple_fake', '⚡ ' + _('Zapret-Manager SIMPLE FAKE (Fake Google + ts)'));
         o.value('zm_simple_fake_alt', '⚡ ' + _('Zapret-Manager SIMPLE FAKE ALT (Fake badseq +2)'));
         o.value('zm_simple_fake_alt2', '⚡ ' + _('Zapret-Manager SIMPLE FAKE ALT2 (Fake max.ru ts)'));
-        o.value('zm_martin_backer', '⚡ ' + _('Zapret-Manager MartinBacker (Circular Multi-strategy)'));
         o.value('zm_krushaaa', '⚡ ' + _('Zapret-Manager Krushaaa (BurgerKing + Magnit + ts)'));
         o.value('zm_hardcorp74', '⚡ ' + _('Zapret-Manager Hardcorp74'));
         o.value('zm_eduncey', '⚡ ' + _('Zapret-Manager Eduncey'));
-        o.value('zm_uvvi2', '⚡ ' + _('Zapret-Manager Uvvi2 (Targeted Voice + Circular)'));
-        o.value('flowseal_general', '🔥 ' + _('Flowseal Classic (YouTube 4K + Discord Voice)'));
-        o.value('youtube_discord_ultimate', '🎯 ' + _('YouTube & Discord Ultimate'));
-        o.value('z2_ready_06', '🛡️ ' + _('z2-ready-06 (Multidisorder SNI split)'));
         o.value('z2_ready_01', '⚙️ ' + _('z2-ready-01 (Default fake + disorder)'));
         o.value('z2_ready_02', '⚙️ ' + _('z2-ready-02 (Google TLS fake + disorder)'));
-        o.value('z2_ready_03', '⚙️ ' + _('z2-ready-03 (Timestamp fake + multisplit)'));
         o.value('z2_ready_04', '⚙️ ' + _('z2-ready-04 (MD5 fake + multisplit)'));
+        o.value('z2_ready_06', '⚙️ ' + _('z2-ready-06 (Multidisorder SNI split)'));
         o.value('z2_ready_07', '⚙️ ' + _('z2-ready-07 (TCP segment overlap + drop)'));
         o.value('z2_ready_08', '⚙️ ' + _('z2-ready-08 (Window size + disorder)'));
         o.value('z2_ready_09', '⚙️ ' + _('z2-ready-09 (Repeated fake + multisplit)'));
         o.value('z2_ready_10', '⚙️ ' + _('z2-ready-10 (Repeated fake + multidisorder)'));
         o.value('flowseal_fake_tls_auto', '🚀 ' + _('Flowseal Fake TLS Auto (YouTube + Discord + General)'));
         o.value('flowseal_simple_fake', '🍃 ' + _('Flowseal Simple Fake (Low CPU)'));
-        o.value('z2k_autocircular', '⚡ ' + _('Z2K Auto-Rotation (Автоподбор стратегий при сбоях)'));
         o.value('remittor_168', '🛡️ ' + _('Remittor #168 (with DoT DNS TCP 853)'));
         o.value('v1_by_Schiz23', 'v1 by Schiz23');
         o.value('v2_by_Schiz23', 'v2 by Schiz23');
@@ -344,14 +344,18 @@ return view.extend({
                 ui.addNotification(null, E('p', _('Please select a strategy preset from the dropdown first.')));
                 return;
             }
-            ui.addNotification(null, E('p', _('Applying strategy "%s", please wait...').format(val)));
+            ui.showModal(_('Применение стратегии'), [
+                E('p', { class: 'spinning' }, _('Применение стратегии "%s", обновление конфигурации...').format(val))
+            ]);
             return fs.exec('/opt/zapret2/restore-def-cfg.sh', [ '(skip_base)(sync)', val ]).then(res => {
                 if (res.code == 0) {
-                    ui.addNotification(null, E('p', _('Strategy "%s" applied successfully! Reloading service...').format(val)));
                     return fs.exec('/etc/init.d/zapret2', [ 'restart' ]).then(() => {
-                        setTimeout(() => location.reload(), 1500);
+                        ui.hideModal();
+                        ui.addNotification(null, E('p', _('Стратегия "%s" успешно применена!').format(val)));
+                        setTimeout(() => location.reload(), 1200);
                     });
                 } else {
+                    ui.hideModal();
                     ui.addNotification(null, E('p', _('Failed to apply strategy: ') + (res.stderr || res.stdout || '')));
                 }
             });

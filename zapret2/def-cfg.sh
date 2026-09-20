@@ -284,44 +284,42 @@ function set_cfg_nfqws_strat
 	fi
 	if [ "$strat" = "z2k_autocircular" ]; then
 		uci batch <<-EOF
-			set $cfgname.config.NFQWS2_PORTS_TCP='80,443'
-			set $cfgname.config.NFQWS2_PORTS_UDP='443'
+			set $cfgname.config.MODE_FILTER='hostlist'
+			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,1984,5222'
+			set $cfgname.config.NFQWS2_PORTS_UDP='443,590-600,1400,3478-3481,5349,19294-19344,49152-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
 				
-				--lua-load=/opt/zapret2/files/lua/z2k-state-persist.lua
-				--lua-load=/opt/zapret2/files/lua/z2k-modern-core.lua
-				--lua-load=/opt/zapret2/files/lua/z2k-quic-silence.lua
-				--lua-load=/opt/zapret2/files/lua/z2k-alert.lua
+				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
+				--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin
 
-				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
-				--blob=blob_tls_clienthello_vk_com:@/opt/zapret2/files/fake/tls_clienthello_vk_com.bin
-				--blob=blob_tls_clienthello_gosuslugi_ru:@/opt/zapret2/files/fake/tls_clienthello_gosuslugi_ru.bin
-				--blob=blob_quic_initial_www_google_com:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin
-
-				--filter-tcp=80
-				--filter-l7=http <HOSTLIST>
-				--payload=http_req
-				--lua-desync=fake:blob=fake_default_http:tcp_md5
-				--lua-desync=multisplit:pos=method+2
-
-				--new
-				--filter-tcp=443
-				--filter-l7=tls <HOSTLIST>
-				--payload=tls_client_hello
-				--lua-desync=circular:fails=2:maxtime=60
-				--lua-desync=fake:blob=blob_tls_clienthello_www_google_com:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1000:strategy=1
-				--lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=blob_tls_clienthello_www_google_com:strategy=1
-				--lua-desync=fake:blob=fake_default_tls:ip_ttl=1:tls_mod=rnd,rndsni,padencap:strategy=2
+				--filter-tcp=443,80,1984,5222
+				--filter-l7=http,tls,mtproto <HOSTLIST>
+				--payload=tls_client_hello,mtproto_initial
+				--lua-desync=circular:fails=2:time=300:retrans=3:nld=2
+				--lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_seq=10000:strategy=1
+				--lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=1
+				--lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tls_mod=rnd,dupsid,sni=www.google.com:repeats=2:strategy=2
 				--lua-desync=multisplit:pos=1,midsld:strategy=2
-				--lua-desync=fakeddisorder:pos=10,midsld:seqovl=336:seqovl_pattern=blob_tls_clienthello_gosuslugi_ru:pattern=blob_tls_clienthello_vk_com:strategy=3
-				--lua-desync=multisplit:pos=2,endhost:strategy=4
+				--lua-desync=hostfakesplit:host=ozon.ru:midhost=host-2:seqovl=sniext+3:seqovl_pattern=tls_clienthello:badsum:tcp_md5:tcp_ts_up:strategy=3
+				--lua-desync=hostfakesplit:tcp_md5:tcp_ts_up:strategy=3
+				--payload=http_req
+				--lua-desync=http_methodeol:badsum
 
 				--new
 				--filter-udp=443
 				--filter-l7=quic <HOSTLIST_NOAUTO>
 				--payload=quic_initial
-				--lua-desync=fake:blob=blob_quic_initial_www_google_com:repeats=11
+				--lua-desync=fake:blob=quic_initial:repeats=11
+
+				--new
+				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,49152-65535
+				--filter-l7=wireguard,stun,discord,mtproto,unknown
+				--out-range=-n1
+				--payload=wireguard_initiation,wireguard_response,wireguard_cookie,stun,discord_ip_discovery,mtproto_initial,unknown
+				--lua-desync=circular:fails=2:time=300:retrans=3:nld=2
+				--lua-desync=fake:repeats=6:strategy=1
+				--lua-desync=fake:blob=quic_initial:repeats=6:strategy=2
 			"
 			commit $cfgname
 		EOF
@@ -667,11 +665,12 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='88,443,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
+				--blob=blob_quic_initial_4pda_to:@/opt/zapret2/files/fake/quic_initial_4pda_to.bin
 				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
 				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=1
 				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
-				--new --filter-udp=88,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535 --out-range=<n4 --payload=known,unknown --lua-desync=fake:blob=blob_quic_initial_4pda_to:repeats=10
-				--new --filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442 --out-range=<n4 --payload=known,unknown --lua-desync=multisplit:pos=1:seqovl=582
+				--new --filter-udp=88,1024-2407,2409-4499,4502-19293,19345-49999,50000-65535 --out-range=-n3 --payload=known,unknown --lua-desync=fake:blob=blob_quic_initial_4pda_to:repeats=10
+				--new --filter-tcp=2802,2302,2502,3478-3480,3724,6000-8000,8085,8090,8100,8903,8904,25565,27015-27030,27036-27037,35500-35600,50001,60442 --out-range=-n3 --payload=known,unknown --lua-desync=multisplit:pos=1:seqovl=582
 			"
 			commit $cfgname
 		EOF
@@ -682,6 +681,7 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
+				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
 				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=1
 				--new --filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=blob_tls_clienthello_www_google_com:repeats=8:tcp_ts=-600000 --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=blob_tls_clienthello_www_google_com:repeats=8
@@ -697,8 +697,9 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_UDP='443,50000-65535'
 			set $cfgname.config.NFQWS2_OPT="
 				--comment=Strategy__$strat
+				--blob=blob_tls_clienthello_www_google_com:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin
 				--filter-tcp=80 --filter-l7=http <HOSTLIST> --payload=http_req --lua-desync=fake:blob=fake_default_http:tcp_md5 --lua-desync=multisplit:pos=method+2
-				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --ip-id=zero --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=blob_tls_clienthello_www_google_com
+				--new --filter-tcp=443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=blob_tls_clienthello_www_google_com:ip_id=zero
 				--new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=fake_default_quic:repeats=11
 				--new --filter-udp=50000-65535 --filter-l7=discord --out-range=-n1 --payload=discord_ip_discovery --lua-desync=fake:repeats=6
 			"
@@ -1330,7 +1331,7 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,1984,2053,2083,2087,2096,5222,8443'
 			set $cfgname.config.NFQWS2_PORTS_UDP='443,590-600,1400,3478-3481,5349,19294-19344,35349,49152-65535'
 			set $cfgname.config.NFQWS2_OPT="
-				--comment=Strategy__zm_hardcorp74
+				--comment=Strategy__$strat
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=quic_initial_vk_com:@/opt/zapret2/files/fake/quic_initial_vk_com.bin
 				--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin
@@ -1340,15 +1341,15 @@ function set_cfg_nfqws_strat
 				--blob=zero:0x00000000
 				--filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --lua-desync=fake:blob=tls_clienthello:optional:tcp_seq=-10000:tcp_ack=-66000:badsum:tls_mod=rnd,dupsid,sni=rzd.ru:repeats=4
 				--new
-				--filter-tcp=443 <HOSTLIST> --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:midhost=host-4:altorder=0:badsum:md5sig:badseq:badseq_increment=0:ip_id=seqgroup:tcp_ts_up
+				--filter-tcp=443 <HOSTLIST> --payload=tls_client_hello --lua-desync=hostfakesplit:host=www.google.com:midhost=host-4:badsum:tcp_md5:badseq:badseq_increment=0:ip_id=seqgroup:tcp_ts_up
 				--new
 				--filter-udp=49152-65535 --ipset=/opt/zapret2/ipset/cust1.txt --payload=unknown --lua-desync=fake:blob=quic_initial:payload=unknown:repeats=12
 				--new
-				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto <HOSTLIST> --payload=tls_client_hello,mtproto_initial --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun_fake:strategy=1 --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun_fake:repeats=2-4:badsum:badseq:md5sig:strategy=1 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:md5sig:tcp_md5:repeats=5:strategy=1 --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:strategy=1 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=ya.ru:tcp_seq=10000:strategy=2 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=2 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1:strategy=3 --lua-desync=fake:blob=tls_clienthello:optional:tcp_seq=-10000:tcp_ack=-66000:badsum:tls_mod=rnd,dupsid,sni=rzd.ru:repeats=4:strategy=3 --payload=http_req --lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
+				--filter-tcp=443,80,1984,5222 --filter-l7=http,tls,mtproto <HOSTLIST> --payload=tls_client_hello,mtproto_initial --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun_fake:strategy=1 --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun_fake:repeats=2-4:badsum:badseq:tcp_md5:strategy=1 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:tcp_md5:repeats=5:strategy=1 --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:strategy=1 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=ya.ru:tcp_seq=10000:strategy=2 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=2 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1:strategy=3 --lua-desync=fake:blob=tls_clienthello:optional:tcp_seq=-10000:tcp_ack=-66000:badsum:tls_mod=rnd,dupsid,sni=rzd.ru:repeats=4:strategy=3 --payload=http_req --lua-desync=fake:blob=tls_sochi:repeats=5:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
 				--new
 				--filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=11
 				--new
-				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,35349,49152-65535 --filter-l7=wireguard,stun,discord,mtproto,unknown --out-range=<n2 --payload=wireguard_initiation,wireguard_response,wireguard_cookie,stun,discord_ip_discovery,mtproto_initial,unknown --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:repeats=6:strategy=1 --lua-desync=fake:blob=discord_udp:repeats=4:strategy=1 --lua-desync=fake:blob=quic_initial:repeats=6:strategy=2 --lua-desync=fake:blob=discord_udp:repeats=5:strategy=2 --lua-desync=fake:blob=quic_initial_vk_com:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:payload=all:repeats=6:strategy=3
+				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,35349,49152-65535 --filter-l7=wireguard,stun,discord,mtproto,unknown --out-range=-n1 --payload=wireguard_initiation,wireguard_response,wireguard_cookie,stun,discord_ip_discovery,mtproto_initial,unknown --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:repeats=6:strategy=1 --lua-desync=fake:blob=discord_udp:repeats=4:strategy=1 --lua-desync=fake:blob=quic_initial:repeats=6:strategy=2 --lua-desync=fake:blob=discord_udp:repeats=5:strategy=2 --lua-desync=fake:blob=quic_initial_vk_com:ip_autottl=-2,3-20:ip6_autottl=-2,3-20:payload=all:repeats=6:strategy=3
 			"
 			commit $cfgname
 		EOF
@@ -1359,30 +1360,30 @@ function set_cfg_nfqws_strat
 			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,1984,2053,2083,2087,2096,5222,8443'
 			set $cfgname.config.NFQWS2_PORTS_UDP='443,590-600,1400,3478-3481,5349,19294-19344,50000-50100,49152-65535'
 			set $cfgname.config.NFQWS2_OPT="
-				--comment=Strategy__zm_eduncey
+				--comment=Strategy__$strat
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=tls_clienthello:@/opt/zapret2/files/fake/tls_clienthello.bin
 				--blob=quic_dbankcloud:@/opt/zapret2/files/fake/quic_initial_dbankcloud_ru.bin
 				--filter-udp=3478-3481,19294-19344,50000-50100 --filter-l7=discord,stun --lua-desync=fake:blob=quic_dbankcloud:repeats=6
 				--new
-				--filter-udp=3478-3481,19294-19344,50000-50100 --filter-l7=unknown --lua-desync=fake:blob=quic_dbankcloud:repeats=12:cutoff=n3
+				--filter-udp=3478-3481,19294-19344,50000-50100 --filter-l7=unknown --out-range=-n3 --lua-desync=fake:blob=quic_dbankcloud:repeats=12
 				--new
-				--filter-tcp=443,80,1984,2053,2083,2087,2096,5222,8443 --filter-l7=http,tls,mtproto <HOSTLIST> --payload=tls_client_hello,mtproto_initial --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_seq=10000:strategy=1 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=1 --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tls_mod=rnd,dupsid,sni=www.google.com:repeats=2:strategy=2 --lua-desync=multisplit:pos=1,midsld:strategy=2 --lua-desync=hostfakesplit:host=ozon.ru:midhost=host-2:seqovl=sniext+3:seqovl_pattern=tls_clienthello:badsum:tcp_md5:tcp_ts_up:strategy=3 --lua-desync=hostfakesplit:tcp_md5:tcp_ts_up:strategy=3 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:strategy=4 --lua-desync=hostfakesplit:host=www.google.com:altorder=1:fool=ts:strategy=4 --payload=http_req --lua-desync=http_methodeol:badsum
+				--filter-tcp=443,80,1984,2053,2083,2087,2096,5222,8443 --filter-l7=http,tls,mtproto <HOSTLIST> --payload=tls_client_hello,mtproto_initial --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=fonts.google.com:tcp_seq=10000:strategy=1 --lua-desync=multisplit:pos=1,midsld:seqovl=1:seqovl_pattern=tls_clienthello:tcp_ts_up:strategy=1 --lua-desync=fake:blob=0x00000000:tcp_ack=-66000:tls_mod=rnd,dupsid,sni=www.google.com:repeats=2:strategy=2 --lua-desync=multisplit:pos=1,midsld:strategy=2 --lua-desync=hostfakesplit:host=ozon.ru:midhost=host-2:seqovl=sniext+3:seqovl_pattern=tls_clienthello:badsum:tcp_md5:tcp_ts_up:strategy=3 --lua-desync=hostfakesplit:tcp_md5:tcp_ts_up:strategy=3 --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:strategy=4 --lua-desync=hostfakesplit:host=www.google.com:tcp_ts_up:strategy=4 --payload=http_req --lua-desync=http_methodeol:badsum
 				--new
 				--filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=11
 				--new
-				--filter-udp=590-600,1400,5349,49152-49999,50101-65535 --filter-l7=wireguard,mtproto,unknown --out-range=<n2 --payload=wireguard_initiation,wireguard_response,wireguard_cookie,mtproto_initial,unknown --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:repeats=6:strategy=1 --lua-desync=fake:blob=quic_initial:repeats=6:strategy=2
+				--filter-udp=590-600,1400,5349,49152-49999,50101-65535 --filter-l7=wireguard,mtproto,unknown --out-range=-n1 --payload=wireguard_initiation,wireguard_response,wireguard_cookie,mtproto_initial,unknown --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --lua-desync=fake:repeats=6:strategy=1 --lua-desync=fake:blob=quic_initial:repeats=6:strategy=2
 			"
 			commit $cfgname
 		EOF
 	fi
-	if [ "$strat" = "zm_martinbacker" ]; then
+	if [ "$strat" = "zm_martinbacker" -o "$strat" = "zm_martin_backer" ]; then
 		uci batch <<-EOF
 			set $cfgname.config.MODE_FILTER='hostlist'
 			set $cfgname.config.NFQWS2_PORTS_TCP='80,443,1984,2053,2083,2087,2096,5222,8443'
 			set $cfgname.config.NFQWS2_PORTS_UDP='443,590-600,1400,3478-3481,5349,19294-19344,49152-65535'
 			set $cfgname.config.NFQWS2_OPT="
-				--comment=Strategy__zm_martinbacker
+				--comment=Strategy__$strat
 				--blob=quic_initial:@/opt/zapret2/files/fake/quic_initial.bin
 				--blob=quick_dbank:@/opt/zapret2/files/fake/quic_initial_dbankcloud_ru.bin
 				--blob=quick_yt:@/opt/zapret2/files/fake/quic_my_youtube_initial.bin
@@ -1394,13 +1395,13 @@ function set_cfg_nfqws_strat
 				--new
 				--hostlist-domains=googlevideo.com --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=11
 				--new
-				--hostlist-domains=mobatek.net --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tls_mod=rnd,dupsid,padencap:repeats=1 --lua-desync=multisplit:pos=2 --payload=empty --out-range=<s1 --lua-desync=send:tcp_md5
+				--hostlist-domains=mobatek.net --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tcp_md5:tls_mod=rnd,dupsid,padencap:repeats=1 --lua-desync=multisplit:pos=2 --payload=empty --out-range=-s1 --lua-desync=send:tcp_md5
 				--new
 				--ipset=/opt/zapret2/ipset/cust2.txt --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=ad.adriver.ru:tcp_ts=-1000 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_max:tcp_ts_up
 				--new
 				--ipset=/opt/zapret2/ipset/cust2.txt --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=hcaptcha.com:tcp_ts=-1000 --lua-desync=multidisorder:pos=1,midsld,sniext+1,endhost-2,-10:seqovl=1:seqovl_pattern=tls_max:tcp_ts_up
 				--new
-				--ipset=/opt/zapret2/ipset/zapret-ip-user.txt --ipset-exclude=/opt/zapret2/ipset/zapret-ip-exclude.txt --ipset-ip=0.0.0.0 --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun:tcp_ts_up --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun:repeats=2-4:badsum:badseq:md5sig:tcp_ts_up --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:md5sig:tcp_md5:repeats=5:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:ip6_ttl=2:tcp_ts_up
+				--ipset=/opt/zapret2/ipset/zapret-ip-user.txt --ipset-exclude=/opt/zapret2/ipset/zapret-ip-exclude.txt --ipset-ip=0.0.0.0 --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld:seqovl=568:seqovl_pattern=stun:tcp_ts_up --lua-desync=multisplit:pos=1,sniext+1:seqovl=582:seqovl_pattern=stun:repeats=2-4:badsum:badseq:tcp_md5:tcp_ts_up --lua-desync=fake:blob=tls_clienthello:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ts=-1500:badsum:badseq:tcp_md5:repeats=5:tcp_ts_up --lua-desync=hostfakesplit:host=www.google.com:midhost=midsld-2:repeats=4:ip_ttl=2:ip6_ttl=2:tcp_ts_up
 				--new
 				--ipset=/opt/zapret2/ipset/zapret-ip-user.txt --ipset-exclude=/opt/zapret2/ipset/zapret-ip-exclude.txt --ipset-ip=0.0.0.0 --filter-udp=443 --filter-l7=quic --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=6
 				--new
@@ -1410,7 +1411,7 @@ function set_cfg_nfqws_strat
 				--new
 				--filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_initial:repeats=11
 				--new
-				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,49152-65535 --filter-l7=wireguard,stun,discord,mtproto,unknown --out-range=<n2 --payload=wireguard_initiation,wireguard_response,wireguard_cookie,stun,discord_ip_discovery,mtproto_initial,unknown --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --in-range=x --lua-desync=fake:blob=quic_initial:repeats=6:strategy=1 --lua-desync=fake:repeats=6:strategy=2
+				--filter-udp=590-600,1400,3478-3481,5349,19294-19344,49152-65535 --filter-l7=wireguard,stun,discord,mtproto,unknown --out-range=-n1 --payload=wireguard_initiation,wireguard_response,wireguard_cookie,stun,discord_ip_discovery,mtproto_initial,unknown --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=2:time=300:retrans=3:nld=2 --in-range=x --lua-desync=fake:blob=quic_initial:repeats=6:strategy=1 --lua-desync=fake:repeats=6:strategy=2
 			"
 			commit $cfgname
 		EOF
