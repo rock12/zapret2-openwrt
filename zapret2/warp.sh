@@ -443,6 +443,11 @@ game_uci_opt() {
 }
 
 # Setup PBR routing tables and rules
+filter_ipv4_file() {
+    [ -f "$1" ] || return 0
+    grep -oE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?' "$1" 2>/dev/null || true
+}
+
 warp_pbr_up() {
     _log "Активация PBR маршрутизации в WARP (таблица $WARP_TABLE)..."
     
@@ -453,30 +458,21 @@ warp_pbr_up() {
     if [ -x /sbin/fw4 ]; then
         nft add table inet zapret2_warp 2>/dev/null || true
         nft flush table inet zapret2_warp 2>/dev/null || true
-        nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; }' 2>/dev/null || true
+        nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; auto-merge; }' 2>/dev/null || true
         
         local route_tg="$(uci -q get zapret2.config.WARP_TELEGRAM || echo 1)"
-
         local tmp_nft="/tmp/warp_targets.nft"
-        printf 'add element inet zapret2_warp warp_targets { ' > "$tmp_nft"
-        local first=1
+        local tmp_ips="/tmp/warp_raw_ips.txt"
+        : > "$tmp_ips"
 
         # 1. Telegram
         if [ "$route_tg" != "0" ] && [ -s "$TG_IPS" ]; then
-            for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$TG_IPS" | grep -v ':'); do
-                [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
-                first=0
-                printf '%s' "$cidr" >> "$tmp_nft"
-            done
+            filter_ipv4_file "$TG_IPS" >> "$tmp_ips"
         fi
         
         # 2. Custom user games
         if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
-            for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$WARP_DIR/games_user.txt" | grep -v ':'); do
-                [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
-                first=0
-                printf '%s' "$cidr" >> "$tmp_nft"
-            done
+            filter_ipv4_file "$WARP_DIR/games_user.txt" >> "$tmp_ips"
         fi
 
         # 3. Check each game file in $GAMES_DIR against individual UCI toggles
@@ -488,11 +484,7 @@ warp_pbr_up() {
             is_enabled=$(uci -q get "zapret2.config.$opt")
             if [ "$is_enabled" != "0" ]; then
                 _log "Маршрутизация WARP ВКЛЮЧЕНА для: $gbase"
-                for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$gfile" | grep -v ':'); do
-                    [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
-                    first=0
-                    printf '%s' "$cidr" >> "$tmp_nft"
-                done
+                filter_ipv4_file "$gfile" >> "$tmp_ips"
             else
                 _log "Маршрутизация WARP ВЫКЛЮЧЕНА для: $gbase"
             fi
@@ -501,18 +493,25 @@ warp_pbr_up() {
         # 4. Dynamic failover targets
         for autotgt in "$WARP_DIR/auto_targets.txt" /tmp/warp_targets.txt; do
             [ -f "$autotgt" ] || continue
-            for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$autotgt" | grep -v ':'); do
-                [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
-                first=0
-                printf '%s' "$cidr" >> "$tmp_nft"
-            done
+            filter_ipv4_file "$autotgt" >> "$tmp_ips"
         done
 
-        if [ "$first" = 0 ]; then
-            printf ' }\n' >> "$tmp_nft"
+        if [ -s "$tmp_ips" ]; then
+            cat << 'EOF' > "$tmp_nft"
+table inet zapret2_warp {
+    set warp_targets {
+        type ipv4_addr
+        flags interval
+        auto-merge
+        elements = {
+EOF
+            sed 's/$/,/' "$tmp_ips" >> "$tmp_nft"
+            echo "        127.0.0.2 }" >> "$tmp_nft"
+            echo "    }" >> "$tmp_nft"
+            echo "}" >> "$tmp_nft"
             nft -f "$tmp_nft" 2>/dev/null || true
         fi
-        rm -f "$tmp_nft"
+        rm -f "$tmp_nft" "$tmp_ips"
 
         nft add chain inet zapret2_warp prerouting '{ type filter hook prerouting priority mangle - 1; }' 2>/dev/null || true
         nft add rule inet zapret2_warp prerouting ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
@@ -523,10 +522,10 @@ warp_pbr_up() {
         local route_tg="$(uci -q get zapret2.config.WARP_TELEGRAM || echo 1)"
 
         if [ "$route_tg" != "0" ] && [ -s "$TG_IPS" ]; then
-            grep -vE '^[[:space:]]*(#|$)' "$TG_IPS" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+            filter_ipv4_file "$TG_IPS" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
         fi
         if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
-            grep -vE '^[[:space:]]*(#|$)' "$WARP_DIR/games_user.txt" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+            filter_ipv4_file "$WARP_DIR/games_user.txt" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
         fi
         for gf in "$GAMES_DIR"/*.txt; do
             [ -f "$gf" ] || continue
@@ -535,7 +534,7 @@ warp_pbr_up() {
             opt=$(game_uci_opt "$gb")
             is_en=$(uci -q get "zapret2.config.$opt")
             if [ "$is_en" != "0" ]; then
-                grep -vE '^[[:space:]]*(#|$)' "$gf" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
+                filter_ipv4_file "$gf" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
             fi
         done
         iptables -t mangle -D PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
