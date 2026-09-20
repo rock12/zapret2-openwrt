@@ -74,8 +74,7 @@ function boot
 			fi
 		fi
 	fi
-	init_before_start "$DAEMON_LOG_ENABLE" "$DAEMON_LOG_SIZE_MAX"
-	/bin/sh /etc/rc.common $ZAPRET_ORIG_INITD start "$@"
+	start "$@"
 }
 
 function start
