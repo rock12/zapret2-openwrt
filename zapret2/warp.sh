@@ -414,20 +414,15 @@ warp_pbr_up() {
                 gbase="$(basename "$gfile" .txt)"
                 opt=$(game_uci_opt "$gbase")
                 is_enabled=$(uci -q get "zapret2.config.$opt")
-                if [ -z "$is_enabled" ]; then
-                    case "$opt" in
-                        WARP_GAME_WARZONE|WARP_GAME_BATTLEFIELD6) is_enabled=1 ;;
-                        *) is_enabled=0 ;;
-                    esac
-                fi
-
-                if [ "$is_enabled" = "1" ]; then
-                    _log "Маршрутизация WARP ВКЛЮЧЕНА для: $gbase ($opt=1)"
+                if [ "$is_enabled" != "0" ]; then
+                    _log "Маршрутизация WARP ВКЛЮЧЕНА для: $gbase"
                     for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$gfile" | grep -v ':'); do
                         [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
                         first=0
                         printf '%s' "$cidr" >> "$tmp_nft"
                     done
+                else
+                    _log "Маршрутизация WARP ВЫКЛЮЧЕНА для: $gbase"
                 fi
             done
 
@@ -470,13 +465,7 @@ warp_pbr_up() {
                 gb="$(basename "$gf" .txt)"
                 opt=$(game_uci_opt "$gb")
                 is_en=$(uci -q get "zapret2.config.$opt")
-                if [ -z "$is_en" ]; then
-                    case "$opt" in
-                        WARP_GAME_WARZONE|WARP_GAME_BATTLEFIELD6) is_en=1 ;;
-                        *) is_en=0 ;;
-                    esac
-                fi
-                if [ "$is_en" = "1" ]; then
+                if [ "$is_en" != "0" ]; then
                     grep -vE '^[[:space:]]*(#|$)' "$gf" | grep -v ':' | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
                 fi
             done

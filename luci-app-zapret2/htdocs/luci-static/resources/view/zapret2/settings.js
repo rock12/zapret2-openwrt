@@ -770,47 +770,59 @@ return view.extend({
 
         o = s.taboption(tabname, form.DummyValue, '_gaming_lists_header');
         o.rawhtml = true;
-        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Игровые сервисы через WARP (Индивидуальные тумблеры)') + '</h3>' +
-                    '<p class="description">' + _('Включайте или выключайте маршрутизацию через WARP для конкретных игр тумблерами ниже. При необходимости можно просмотреть или отредактировать подсети IP.') + '</p>';
+        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Gaming & Telegram IP Lists (Click to View / Edit)') + '</h3>';
 
         const warpGames = [
-            { id: 'WARP_GAME_WARZONE', file: 'Warzone_CallOfDuty.txt', title: _('Call of Duty: Warzone & Modern Warfare'), desc: _('Серверы матчей и лобби Warzone (772 подсети)'), def: '1' },
-            { id: 'WARP_GAME_BATTLEFIELD6', file: 'Battlefield6.txt', title: _('Battlefield 6 / 2042 (EA DICE)'), desc: _('Выделенные серверы и матчмейкинг серии Battlefield'), def: '1' },
-            { id: 'WARP_GAME_STEAM', file: 'Steam.txt', title: _('Steam (Игры и голосовые чаты)'), desc: _('Сетевые реле и серверы сообщества Steam'), def: '0' },
-            { id: 'WARP_GAME_EA_ORIGIN', file: 'EA_Origin.txt', title: _('EA App / Origin'), desc: _('Сетевая инфраструктура Electronic Arts'), def: '0' },
-            { id: 'WARP_GAME_BATTLENET', file: 'BattleNet.txt', title: _('Battle.net / Blizzard'), desc: _('Серверы авторизации и матчей Blizzard'), def: '0' },
-            { id: 'WARP_GAME_EPIC_FORTNITE', file: 'EpicGames_Fortnite.txt', title: _('Epic Games / Fortnite'), desc: _('Серверы матчей Fortnite и Unreal Engine Network'), def: '0' },
-            { id: 'WARP_GAME_RIOT_VALORANT', file: 'RiotGames_Valorant.txt', title: _('Riot Games / Valorant'), desc: _('Серверы Valorant и Riot Direct'), def: '0' },
-            { id: 'WARP_GAME_APEX_ROCKETLEAGUE', file: 'ApexLegends_RocketLeague.txt', title: _('Apex Legends & Rocket League'), desc: _('Серверы Respawn Entertainment и Psyonix'), def: '0' },
-            { id: 'WARP_GAME_UBISOFT', file: 'Ubisoft_Rainbow_Six_Siege.txt', title: _('Ubisoft / Rainbow Six Siege'), desc: _('Серверы матчей Ubisoft Connect и R6'), def: '0' },
-            { id: 'WARP_GAME_ROBLOX', file: 'Roblox.txt', title: _('Roblox'), desc: _('Многопользовательские кластеры Roblox'), def: '0' },
-            { id: 'WARP_GAME_LEAGUEOFLEGENDS', file: 'LeagueOfLegends.txt', title: _('League of Legends'), desc: _('Матчмейкинг и игровые серверы LoL'), def: '0' },
-            { id: 'WARP_GAME_WARFRAME', file: 'Warframe.txt', title: _('Warframe'), desc: _('Реле и выделенные серверы Warframe'), def: '0' },
-            { id: 'WARP_GAME_DEADBYDAYLIGHT', file: 'DeadByDaylight.txt', title: _('Dead By Daylight'), desc: _('Серверы матчей Behaviour Interactive'), def: '0' },
-            { id: 'WARP_GAME_ARMA_REFORGER', file: 'ArmaReforger.txt', title: _('Arma Reforger'), desc: _('Сетевые реле Bohemia Interactive'), def: '0' },
-            { id: 'WARP_GAME_MINECRAFT', file: 'Minecraft_Extra.txt', title: _('Minecraft Extra'), desc: _('Серверы Bedrock и сторонние игровые хабы'), def: '0' },
-            { id: 'WARP_GAME_CUSTOM', file: '../games_user.txt', title: _('Пользовательский список игровых IP (Custom)'), desc: _('Собственные подсети игровых серверов пользователя'), def: '1' },
+            { id: 'WARP_GAME_WARZONE', file: 'Warzone_CallOfDuty.txt', title: _('Warzone / Call of Duty (772 subnets)'), desc: _('Warzone / Call of Duty server subnets') },
+            { id: 'WARP_GAME_BATTLEFIELD6', file: 'Battlefield6.txt', title: _('Battlefield 6 / 2042 IP Ranges'), desc: _('Battlefield 6 & 2042 dedicated servers') },
+            { id: 'WARP_GAME_STEAM', file: 'Steam.txt', title: _('Steam IP Ranges'), desc: _('Steam game and voice servers') },
+            { id: 'WARP_GAME_EA_ORIGIN', file: 'EA_Origin.txt', title: _('EA / Origin IP Ranges'), desc: _('Electronic Arts / Origin network') },
+            { id: 'WARP_GAME_BATTLENET', file: 'BattleNet.txt', title: _('Battle.net / Blizzard IP Ranges'), desc: _('Battle.net & Blizzard servers') },
+            { id: 'WARP_GAME_EPIC_FORTNITE', file: 'EpicGames_Fortnite.txt', title: _('Epic Games & Fortnite IP Ranges'), desc: _('Epic Games and Fortnite matchmaking') },
+            { id: 'WARP_GAME_RIOT_VALORANT', file: 'RiotGames_Valorant.txt', title: _('Riot Games & Valorant IP Ranges'), desc: _('Riot Games and Valorant routes') },
+            { id: 'WARP_GAME_ROBLOX', file: 'Roblox.txt', title: _('Roblox IP Ranges'), desc: _('Roblox multiplayer clusters') },
+            { id: 'WARP_GAME_APEX_ROCKETLEAGUE', file: 'ApexLegends_RocketLeague.txt', title: _('Apex Legends & Rocket League IP Ranges'), desc: _('Apex Legends and Rocket League servers') },
+            { id: 'WARP_GAME_UBISOFT', file: 'Ubisoft_Rainbow_Six_Siege.txt', title: _('Ubisoft / Rainbow Six Siege IP Ranges'), desc: _('Ubisoft Connect and Rainbow Six Siege') },
+            { id: 'WARP_GAME_LEAGUEOFLEGENDS', file: 'LeagueOfLegends.txt', title: _('League of Legends IP Ranges'), desc: _('League of Legends match servers') },
+            { id: 'WARP_GAME_WARFRAME', file: 'Warframe.txt', title: _('Warframe IP Ranges'), desc: _('Warframe dedicated servers and relays') },
+            { id: 'WARP_GAME_DEADBYDAYLIGHT', file: 'DeadByDaylight.txt', title: _('Dead By Daylight IP Ranges'), desc: _('Dead By Daylight servers') },
+            { id: 'WARP_GAME_ARMA_REFORGER', file: 'ArmaReforger.txt', title: _('Arma Reforger IP Ranges'), desc: _('Arma Reforger game relays') },
+            { id: 'WARP_GAME_MINECRAFT', file: 'Minecraft_Extra.txt', title: _('Minecraft Extra IP Ranges'), desc: _('Minecraft Bedrock and community servers') },
+            { id: 'WARP_GAME_CUSTOM', file: '../games_user.txt', title: _('Custom Gaming IP List (User Added)'), desc: _('Custom gaming IP subnets') },
         ];
 
         warpGames.forEach(g => {
+            let filePath = g.file.startsWith('/') ? g.file : (g.file.startsWith('../') ? '/opt/zapret2/warp/' + g.file.substring(3) : '/opt/zapret2/warp/games/' + g.file);
+
             o = s.taboption(tabname, form.Flag, g.id, g.title);
-            o.description = g.desc;
+            o.description = filePath;
             o.rmempty = false;
-            o.default = g.def;
+            o.default = '1';
             o.depends('WARP_GAMES', '1');
 
-            let filePath = g.file.startsWith('/') ? g.file : (g.file.startsWith('../') ? '/opt/zapret2/warp/' + g.file.substring(3) : '/opt/zapret2/warp/games/' + g.file);
-            let btn = s.taboption(tabname, form.Button, '_edit_' + g.id + '_btn', '  ⤷ ' + _('Правка IP: ') + g.title);
-            btn.inputtitle = _('View / Edit IPs');
-            btn.inputstyle = 'edit btn';
-            btn.description = filePath;
-            btn.depends('WARP_GAMES', '1');
-            btn.onclick = () => new tools.fileEditDialog({
-                file: filePath,
-                title: g.title,
-                desc: g.desc + '<br />' + _('One CIDR / subnet per line.'),
-                rows: 15,
-            }).show();
+            let origRender = o.renderWidget;
+            o.renderWidget = function(section_id, option_index, cfgvalue) {
+                let widget = origRender.apply(this, [section_id, option_index, cfgvalue]);
+                let editBtn = E('button', {
+                    'class': 'btn cbi-button cbi-button-action',
+                    'type': 'button',
+                    'style': 'margin-left: 15px; vertical-align: middle;',
+                    'click': ui.createHandlerFn(this, function(ev) {
+                        ev.preventDefault();
+                        new tools.fileEditDialog({
+                            file: filePath,
+                            title: g.title,
+                            desc: g.desc + '<br />' + _('One CIDR / subnet per line.'),
+                            rows: 15,
+                        }).show();
+                    })
+                }, _('View / Edit'));
+
+                return E('div', { 'style': 'display: inline-flex; align-items: center;' }, [
+                    widget,
+                    editBtn
+                ]);
+            };
         });
 
         /* Telegram Proxy (TG WS Proxy) tab */
