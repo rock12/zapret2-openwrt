@@ -296,7 +296,7 @@ warp_pbr_up() {
         fi
         
         if [ "$route_games" != "0" ]; then
-            for gfile in "$GAMES_DIR"/*.txt "$WARP_DIR/games_user.txt"; do
+            for gfile in "$GAMES_DIR"/*.txt "$WARP_DIR/games_user.txt" "$WARP_DIR/auto_targets.txt"; do
                 [ -f "$gfile" ] || continue
                 for cidr in $(grep -vE '^[[:space:]]*(#|$)' "$gfile" | grep -v ':'); do
                     [ "$first" = 1 ] || printf ', ' >> "$tmp_nft"
@@ -368,15 +368,37 @@ warp_status() {
     printf 'registered=%d connected=%d endpoint=%s\n' "$has_dev" "$is_up" "$ep"
 }
 
+# Dynamically route an IP/CIDR to WARP
+warp_add_target() {
+    local target="$1"
+    [ -n "$target" ] || return 1
+    
+    mkdir -p "$WARP_DIR"
+    touch "$WARP_DIR/auto_targets.txt"
+    if ! grep -q "^$target$" "$WARP_DIR/auto_targets.txt" 2>/dev/null; then
+        echo "$target" >> "$WARP_DIR/auto_targets.txt"
+    fi
+
+    if [ -x /sbin/fw4 ]; then
+        nft add table inet zapret2_warp 2>/dev/null || true
+        nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; }' 2>/dev/null || true
+        nft add element inet zapret2_warp warp_targets { "$target" } 2>/dev/null || true
+    else
+        ipset add warp_targets "$target" 2>/dev/null || true
+    fi
+    _log "Добавлен динамический маршрут в WARP: $target"
+}
+
 case "$1" in
-    register) warp_register ;;
-    import)   shift; warp_import "$@" ;;
-    scout)    warp_scout ;;
-    up)       warp_up ;;
-    down)     warp_down ;;
-    pbr_up)   warp_pbr_up ;;
-    pbr_down) warp_pbr_down ;;
-    status)   warp_status ;;
-    restart)  warp_down; warp_up ;;
+    register)   warp_register ;;
+    import)     shift; warp_import "$@" ;;
+    scout)      warp_scout ;;
+    up)         warp_up ;;
+    down)       warp_down ;;
+    pbr_up)     warp_pbr_up ;;
+    pbr_down)   warp_pbr_down ;;
+    status)     warp_status ;;
+    add_target) shift; warp_add_target "$@" ;;
+    restart)    warp_down; warp_up ;;
     *) echo "usage: $0 {register|import|scout|up|down|restart|status}" >&2; exit 1 ;;
 esac

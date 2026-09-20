@@ -74,7 +74,7 @@ process_domain() {
         if echo "$res" | grep -q "^SUCCESS:"; then
             strat_name=$(echo "$res" | cut -d':' -f3)
             strat_opt=$(echo "$res" | cut -d':' -f4-)
-            log "Для $domain подобрана персональная стратегия: $strat_name"
+            log "Для $domain подобрана персональная стратегия DPI: $strat_name"
             
             # Record custom rule
             echo "--new --filter-tcp=443 --filter-l7=tls --hostlist-domains=$domain $strat_opt" >> "$CUSTOM_CONF"
@@ -83,7 +83,25 @@ process_domain() {
             /opt/zapret2/sync_config.sh 2>/dev/null || true
             /etc/init.d/zapret2 restart >/dev/null 2>&1 &
         else
-            log "Домен $domain остаётся на общем правиле multisplit"
+            log "DPI стратегии не пробили $domain (вероятен бан по IP). Перенаправление в Cloudflare WARP..."
+            
+            # Route domain IP to WARP
+            local warp_ip
+            warp_ip=$(nslookup "$domain" 127.0.0.1 2>/dev/null | awk '/^Address: / {print $2}' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+            [ -z "$warp_ip" ] && warp_ip=$(nslookup "$domain" 8.8.8.8 2>/dev/null | awk '/^Address: / {print $2}' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+            
+            if [ -n "$warp_ip" ]; then
+                if [ -x "/opt/zapret2/warp.sh" ]; then
+                    # Ensure WARP is running
+                    if [ "$(uci -q get zapret2.config.WARP_ENABLED)" != "1" ]; then
+                        uci set zapret2.config.WARP_ENABLED=1
+                        uci commit zapret2
+                    fi
+                    /opt/zapret2/warp.sh up >/dev/null 2>&1 || true
+                    /opt/zapret2/warp.sh add_target "$warp_ip/32"
+                    log "IP $warp_ip для $domain успешно направлен в туннель WARP"
+                fi
+            fi
         fi
     fi
 }
