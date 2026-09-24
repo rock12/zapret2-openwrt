@@ -12,7 +12,6 @@ doh.opendns.com
 freedns.controld.com
 wikimedia-dns.org
 nalog.ru
-gstatic.com
 gosuslugi.ru
 mos.ru
 mos-gorsud.ru

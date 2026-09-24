@@ -243,15 +243,10 @@ warp_scout() {
 
     printf '%s\n' "$best_ep" > "$WARP_DIR/endpoint"
     
-    # If amneziawg or wireguard is already configured in UCI, update it live
+    # Update AmneziaWG in UCI live
     if uci -q get network.amneziawg_warp >/dev/null; then
         uci set network.amneziawg_warp.endpoint_host="${best_ep%:*}"
         uci set network.amneziawg_warp.endpoint_port="${best_ep##*:}"
-        uci commit network
-        ifup warp 2>/dev/null || true
-    elif uci -q get network.wireguard_warp >/dev/null; then
-        uci set network.wireguard_warp.endpoint_host="${best_ep%:*}"
-        uci set network.wireguard_warp.endpoint_port="${best_ep##*:}"
         uci commit network
         ifup warp 2>/dev/null || true
     fi
@@ -261,14 +256,14 @@ warp_scout() {
     echo "Лучший эндпоинт: $best_ep (${best_ping}ms)"
 }
 
-# Check and automatically install WireGuard packages if missing
+# Check and automatically install AmneziaWG packages if missing
 check_install_deps() {
-    if ! command -v wg >/dev/null 2>&1 || [ ! -e /sys/module/wireguard ]; then
-        _log "Проверка зависимостей: установка wireguard пакетов..."
+    if ! command -v awg >/dev/null 2>&1 || [ ! -e /sys/module/amneziawg ]; then
+        _log "Проверка зависимостей: установка AmneziaWG пакетов..."
         if command -v apk >/dev/null 2>&1; then
-            apk update && apk add wireguard-tools kmod-wireguard luci-proto-wireguard 2>&1 | tee -a "$WARP_LOG"
+            apk update && apk add amneziawg-tools kmod-amneziawg luci-proto-amneziawg 2>&1 | tee -a "$WARP_LOG"
         elif command -v opkg >/dev/null 2>&1; then
-            opkg update && opkg install wireguard-tools kmod-wireguard luci-proto-wireguard 2>&1 | tee -a "$WARP_LOG"
+            opkg update && opkg install amneziawg-tools kmod-amneziawg luci-proto-amneziawg 2>&1 | tee -a "$WARP_LOG"
         fi
     fi
 }
@@ -369,36 +364,8 @@ warp_uci_setup() {
         uci add_list network.amneziawg_warp.allowed_ips='0.0.0.0/0'
         uci add_list network.amneziawg_warp.allowed_ips='::/0'
     else
-        [ -s "$WARP_DEV" ] || warp_register || return 1
-        priv=$(_json_val "$WARP_DEV" private_key)
-        v4=$(_json_val "$WARP_DEV" v4)
-        v6=$(_json_val "$WARP_DEV" v6)
-        
-        [ -s "$WARP_DIR/endpoint" ] || warp_scout >/dev/null
-        ep=$(cat "$WARP_DIR/endpoint" 2>/dev/null || echo "162.159.192.1:2408")
-        host="${ep%:*}"
-        port="${ep##*:}"
-
-        uci -q delete network.warp
-        uci -q delete network.wireguard_warp
-        uci -q delete network.amneziawg_warp
-        
-        uci set network.warp=interface
-        uci set network.warp.proto='wireguard'
-        uci set network.warp.private_key="$priv"
-        uci add_list network.warp.addresses="${v4}/32"
-        [ -n "$v6" ] && uci add_list network.warp.addresses="${v6}/128"
-        uci set network.warp.disabled='0'
-
-        uci set network.wireguard_warp=wireguard_warp
-        uci set network.wireguard_warp.name='warp_peer'
-        uci set network.wireguard_warp.public_key="$CF_PUBKEY"
-        uci set network.wireguard_warp.endpoint_host="$host"
-        uci set network.wireguard_warp.endpoint_port="$port"
-        uci set network.wireguard_warp.route_allowed_ips='0'
-        uci set network.wireguard_warp.persistent_keepalive='25'
-        uci add_list network.wireguard_warp.allowed_ips='0.0.0.0/0'
-        uci add_list network.wireguard_warp.allowed_ips='::/0'
+        _log "[ОШИБКА] Не найден файл конфигурации AmneziaWG ($WARP_DIR/WARP.conf) или утилита awg не установлена."
+        return 1
     fi
 
     uci commit network

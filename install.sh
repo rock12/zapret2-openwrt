@@ -53,7 +53,7 @@ if [ "$PKG_MGR" = "apk" ]; then
     apk update || true
     
     REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack"
-    OPTIONAL_PKGS="kmod-amneziawg amneziawg-tools wireguard-tools kmod-wireguard luci-proto-wireguard bind-tools"
+    AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg bind-tools"
     
     for p in $REQUIRED_PKGS; do
         if apk info -e "$p" >/dev/null 2>&1; then
@@ -64,7 +64,7 @@ if [ "$PKG_MGR" = "apk" ]; then
         fi
     done
 
-    for p in $OPTIONAL_PKGS; do
+    for p in $AMNEZIA_PKGS; do
         if apk info -e "$p" >/dev/null 2>&1; then
             echo -e "      ${GREEN}✓${NC} $p (уже установлен)"
         else
@@ -76,7 +76,7 @@ else
     opkg update || true
 
     REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack"
-    OPTIONAL_PKGS="kmod-amneziawg amneziawg-tools wireguard-tools kmod-wireguard luci-proto-wireguard bind-tools"
+    AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg bind-tools"
 
     for p in $REQUIRED_PKGS; do
         if opkg list-installed | grep -qw "^$p"; then
@@ -87,7 +87,7 @@ else
         fi
     done
 
-    for p in $OPTIONAL_PKGS; do
+    for p in $AMNEZIA_PKGS; do
         if ! opkg list-installed | grep -qw "^$p"; then
             opkg install "$p" 2>/dev/null || true
         fi
@@ -127,15 +127,17 @@ else
     TMP_SETUP="/tmp/zapret2-setup-$$"
     mkdir -p "$TMP_SETUP"
     if curl -fSL --retry 3 "https://github.com/rock12/zapret2-openwrt/archive/refs/heads/zap1.tar.gz" -o "$TMP_SETUP/repo.tar.gz"; then
-        tar -xzf "$TMP_SETUP/repo.tar.gz" -C "$TMP_SETUP" --strip-components=1
-        cp -rf "$TMP_SETUP/zapret2/"* "$INSTALL_DIR/" 2>/dev/null || true
-        cp -f "$TMP_SETUP/zapret2/init.d.sh" /etc/init.d/zapret2
-        if [ -d "$TMP_SETUP/luci-app-zapret2/htdocs" ]; then
+        tar -xzf "$TMP_SETUP/repo.tar.gz" -C "$TMP_SETUP"
+        SRC_DIR="$(find "$TMP_SETUP" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+        [ -n "$SRC_DIR" ] || SRC_DIR="$TMP_SETUP"
+        cp -rf "$SRC_DIR/zapret2/"* "$INSTALL_DIR/" 2>/dev/null || true
+        cp -f "$SRC_DIR/zapret2/init.d.sh" /etc/init.d/zapret2
+        if [ -d "$SRC_DIR/luci-app-zapret2/htdocs" ]; then
             mkdir -p /www/luci-static/resources/view/zapret2
-            cp -rf "$TMP_SETUP/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/"* /www/luci-static/resources/view/zapret2/ 2>/dev/null || true
+            cp -rf "$SRC_DIR/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/"* /www/luci-static/resources/view/zapret2/ 2>/dev/null || true
         fi
-        if [ -d "$TMP_SETUP/luci-app-zapret2/root" ]; then
-            cp -rf "$TMP_SETUP/luci-app-zapret2/root/"* / 2>/dev/null || true
+        if [ -d "$SRC_DIR/luci-app-zapret2/root" ]; then
+            cp -rf "$SRC_DIR/luci-app-zapret2/root/"* / 2>/dev/null || true
         fi
         rm -rf "$TMP_SETUP"
     else
