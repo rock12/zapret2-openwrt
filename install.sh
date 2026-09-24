@@ -71,6 +71,29 @@ if [ "$PKG_MGR" = "apk" ]; then
             apk add "$p" 2>/dev/null || true
         fi
     done
+    if ! apk info -e kmod-amneziawg >/dev/null 2>&1 && ! apk info -e kmod-wireguard >/dev/null 2>&1; then
+        echo "      -> Установка WireGuard как альтернативного провайдера..."
+        apk add kmod-wireguard wireguard-tools luci-proto-wireguard 2>/dev/null || true
+    fi
+
+    # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
+    ARCH=""
+    [ -f /etc/openwrt_release ] && ARCH="$(. /etc/openwrt_release && echo "$DISTRIB_ARCH")"
+    RELEASE_URL="https://github.com/rock12/zapret2-openwrt/releases/download/v1.0.5.1"
+    if ! apk info -e zapret2 >/dev/null 2>&1 || [ ! -x /opt/zapret2/nfq2/nfqws2 ]; then
+        if [ -n "$ARCH" ]; then
+            echo "      -> Установка бинарного пакета zapret2 ($ARCH)..."
+            curl -sSL -o /tmp/zapret2.apk "$RELEASE_URL/zapret2_${ARCH}.apk" 2>/dev/null || true
+            [ -s /tmp/zapret2.apk ] && apk add --allow-untrusted /tmp/zapret2.apk 2>/dev/null || true
+            rm -f /tmp/zapret2.apk
+        fi
+    fi
+    if ! apk info -e luci-app-zapret2 >/dev/null 2>&1; then
+        echo "      -> Установка пакета luci-app-zapret2..."
+        curl -sSL -o /tmp/luci-app-zapret2.apk "$RELEASE_URL/luci-app-zapret2.apk" 2>/dev/null || true
+        [ -s /tmp/luci-app-zapret2.apk ] && apk add --allow-untrusted /tmp/luci-app-zapret2.apk 2>/dev/null || true
+        rm -f /tmp/luci-app-zapret2.apk
+    fi
 else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
@@ -92,6 +115,29 @@ else
             opkg install "$p" 2>/dev/null || true
         fi
     done
+    if ! opkg list-installed | grep -qw "^kmod-amneziawg" && ! opkg list-installed | grep -qw "^kmod-wireguard"; then
+        echo "      -> Установка WireGuard как альтернативного провайдера..."
+        opkg install kmod-wireguard wireguard-tools luci-proto-wireguard 2>/dev/null || true
+    fi
+
+    # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
+    ARCH=""
+    [ -f /etc/openwrt_release ] && ARCH="$(. /etc/openwrt_release && echo "$DISTRIB_ARCH")"
+    RELEASE_URL="https://github.com/rock12/zapret2-openwrt/releases/download/v1.0.5.1"
+    if ! opkg list-installed | grep -qw "^zapret2" || [ ! -x /opt/zapret2/nfq2/nfqws2 ]; then
+        if [ -n "$ARCH" ]; then
+            echo "      -> Установка бинарного пакета zapret2 ($ARCH)..."
+            curl -sSL -o /tmp/zapret2.ipk "$RELEASE_URL/zapret2_${ARCH}.ipk" 2>/dev/null || true
+            [ -s /tmp/zapret2.ipk ] && opkg install /tmp/zapret2.ipk 2>/dev/null || true
+            rm -f /tmp/zapret2.ipk
+        fi
+    fi
+    if ! opkg list-installed | grep -qw "^luci-app-zapret2"; then
+        echo "      -> Установка пакета luci-app-zapret2..."
+        curl -sSL -o /tmp/luci-app-zapret2.ipk "$RELEASE_URL/luci-app-zapret2.ipk" 2>/dev/null || true
+        [ -s /tmp/luci-app-zapret2.ipk ] && opkg install /tmp/luci-app-zapret2.ipk 2>/dev/null || true
+        rm -f /tmp/luci-app-zapret2.ipk
+    fi
 fi
 
 # 4. Подготовка каталогов
@@ -162,8 +208,11 @@ chmod +x /etc/hotplug.d/iface/99-warp
 
 # 6. Конфигурация UCI по умолчанию
 echo -e "\n${YELLOW}[4/6] Настройка конфигурации сервиса и тумблеров игр...${NC}"
-[ -f /etc/config/zapret2 ] || touch /etc/config/zapret2
-uci -q get zapret2.config >/dev/null || uci -q set zapret2.config=zapret2 || true
+if [ -x "$INSTALL_DIR/uci-def-cfg.sh" ]; then
+    "$INSTALL_DIR/uci-def-cfg.sh" >/dev/null 2>&1 || true
+fi
+uci -q set zapret2.config.WS_USER='daemon' || true
+uci -q set zapret2.config.DAEMON_LOG_SIZE_MAX='2000' || true
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='1' || true

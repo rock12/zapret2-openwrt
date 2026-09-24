@@ -363,8 +363,52 @@ warp_uci_setup() {
         uci set network.amneziawg_warp.persistent_keepalive='25'
         uci add_list network.amneziawg_warp.allowed_ips='0.0.0.0/0'
         uci add_list network.amneziawg_warp.allowed_ips='::/0'
+    elif [ -r "$awg_conf" ] || [ -s "$WARP_DEV" ]; then
+        _log "AmneziaWG не обнаружен, настройка WARP со стандартным WireGuard..."
+        local priv="" v4="" v6=""
+        if [ -s "$WARP_DEV" ]; then
+            priv=$(sed -n 's/.*"private_key"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$WARP_DEV")
+            v4=$(sed -n 's/.*"v4"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$WARP_DEV")
+            v6=$(sed -n 's/.*"v6"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$WARP_DEV")
+        elif [ -r "$awg_conf" ]; then
+            priv=$(grep -iE '^[[:space:]]*PrivateKey' "$awg_conf" | cut -d= -f2 | tr -d ' \r\t')
+            local addrs
+            addrs=$(grep -iE '^[[:space:]]*Address' "$awg_conf" | cut -d= -f2 | tr -d ' \r\t')
+            v4=$(echo "$addrs" | tr ',' '\n' | grep -v ':' | head -n1 | cut -d/ -f1)
+            v6=$(echo "$addrs" | tr ',' '\n' | grep ':' | head -n1 | cut -d/ -f1)
+        fi
+        [ -n "$v4" ] || v4="172.16.0.2"
+        local host="8.34.70.1" port="2408"
+        if [ -s "$WARP_DIR/endpoint" ]; then
+            local scout_ep
+            scout_ep=$(cat "$WARP_DIR/endpoint" 2>/dev/null | tr -d ' \t\r\n')
+            if [ -n "$scout_ep" ] && echo "$scout_ep" | grep -q ':'; then
+                host="${scout_ep%:*}"
+                port="${scout_ep##*:}"
+            fi
+        fi
+        uci -q delete network.warp
+        uci -q delete network.amneziawg_warp
+        uci -q delete network.wireguard_warp
+
+        uci set network.warp=interface
+        uci set network.warp.proto='wireguard'
+        uci set network.warp.private_key="$priv"
+        uci set network.warp.mtu='1280'
+        uci add_list network.warp.addresses="${v4}/32"
+        [ -n "$v6" ] && uci add_list network.warp.addresses="${v6}/128"
+
+        uci set network.wireguard_warp=wireguard_warp
+        uci set network.wireguard_warp.name='warp_peer'
+        uci set network.wireguard_warp.public_key="$CF_PUBKEY"
+        uci set network.wireguard_warp.endpoint_host="$host"
+        uci set network.wireguard_warp.endpoint_port="$port"
+        uci set network.wireguard_warp.route_allowed_ips='0'
+        uci set network.wireguard_warp.persistent_keepalive='25'
+        uci add_list network.wireguard_warp.allowed_ips='0.0.0.0/0'
+        uci add_list network.wireguard_warp.allowed_ips='::/0'
     else
-        _log "[ОШИБКА] Не найден файл конфигурации AmneziaWG ($WARP_DIR/WARP.conf) или утилита awg не установлена."
+        _log "[ОШИБКА] Не найден файл конфигурации WARP ($WARP_DIR/WARP.conf) и устройство не зарегистрировано."
         return 1
     fi
 
