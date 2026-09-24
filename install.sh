@@ -162,15 +162,17 @@ chmod +x /etc/hotplug.d/iface/99-warp
 
 # 6. Конфигурация UCI по умолчанию
 echo -e "\n${YELLOW}[4/6] Настройка конфигурации сервиса и тумблеров игр...${NC}"
+[ -f /etc/config/zapret2 ] || touch /etc/config/zapret2
+uci -q get zapret2.config >/dev/null || uci -q set zapret2.config=zapret2 || true
 uci -q delete zapret2.config.WARP_GAMES || true
-uci -q set zapret2.config.run_on_boot='1'
-uci -q set zapret2.config.WARP_ENABLED='1'
-uci -q set zapret2.config.WARP_TELEGRAM='1'
+uci -q set zapret2.config.run_on_boot='1' || true
+uci -q set zapret2.config.WARP_ENABLED='1' || true
+uci -q set zapret2.config.WARP_TELEGRAM='1' || true
 
 # Включение игр по умолчанию (с возможностью отключения в LuCI)
 for g in WARZONE BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALORANT ROBLOX APEX_ROCKETLEAGUE UBISOFT LEAGUEOFLEGENDS WARFRAME DEADBYDAYLIGHT ARMA_REFORGER MINECRAFT CUSTOM; do
     if [ -z "$(uci -q get zapret2.config.WARP_GAME_$g)" ]; then
-        uci set zapret2.config.WARP_GAME_$g='1'
+        uci -q set zapret2.config.WARP_GAME_$g='1' || true
     fi
 done
 uci commit zapret2 2>/dev/null || true
