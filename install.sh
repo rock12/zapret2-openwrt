@@ -52,7 +52,12 @@ if [ "$PKG_MGR" = "apk" ]; then
     echo "      Обновление индексов пакетов (apk update)..."
     apk update || true
     
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack"
+    # Если установлен forkop, убираем искусственный конфликт !https-dns-proxy
+    if [ -f /lib/apk/db/installed ]; then
+        sed -i 's/ !https-dns-proxy//g' /lib/apk/db/installed 2>/dev/null || true
+    fi
+
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack https-dns-proxy luci-app-https-dns-proxy"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg bind-tools"
     
     for p in $REQUIRED_PKGS; do
@@ -98,7 +103,7 @@ else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack https-dns-proxy luci-app-https-dns-proxy"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg bind-tools"
 
     for p in $REQUIRED_PKGS; do
@@ -230,7 +235,9 @@ done
 uci commit zapret2 2>/dev/null || true
 
 # 7. Запуск сервисов
-echo -e "\n${YELLOW}[5/6] Включение автозагрузки и запуск zapret2...${NC}"
+echo -e "\n${YELLOW}[5/6] Включение автозагрузки и запуск служб...${NC}"
+/etc/init.d/https-dns-proxy enable 2>/dev/null || true
+/etc/init.d/https-dns-proxy restart 2>/dev/null || true
 /etc/init.d/zapret2 enable 2>/dev/null || true
 /etc/init.d/zapret2 restart 2>/dev/null || true
 
