@@ -218,6 +218,8 @@ if [ -x "$INSTALL_DIR/uci-def-cfg.sh" ]; then
 fi
 uci -q set zapret2.config.WS_USER='daemon' || true
 uci -q set zapret2.config.DAEMON_LOG_SIZE_MAX='2000' || true
+uci -q set zapret2.config.MODE_FILTER='autohostlist' || true
+uci -q set zapret2.config.AUTOHOSTLIST_DEBUGLOG='1' || true
 uci -q set zapret2.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443' || true
 uci -q set zapret2.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-50100' || true
 uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11 --new --filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:blob=discord_udp:repeats=6' || true
@@ -240,6 +242,12 @@ echo -e "\n${YELLOW}[5/6] Включение автозагрузки и зап�
 /etc/init.d/https-dns-proxy restart 2>/dev/null || true
 /etc/init.d/zapret2 enable 2>/dev/null || true
 /etc/init.d/zapret2 restart 2>/dev/null || true
+
+# Установка и запуск TG WS Proxy для Telegram (Socks5 порт 2080)
+if [ -x "$INSTALL_DIR/tg_proxy.sh" ]; then
+    echo "      Установка и запуск Telegram WS Proxy..."
+    "$INSTALL_DIR/tg_proxy.sh" install 2>/dev/null || true
+fi
 
 # Перезапуск веб-сервера LuCI для обновления интерфейса
 /etc/init.d/uhttpd restart 2>/dev/null || true

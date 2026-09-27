@@ -15,7 +15,7 @@ function set_cfg_reset_values
 		set $cfgname.config.DISABLE_IPV4='0'
 		set $cfgname.config.DISABLE_IPV6='1'
 		set $cfgname.config.FILTER_TTL_EXPIRED_ICMP='1'
-		set $cfgname.config.MODE_FILTER='hostlist'
+		set $cfgname.config.MODE_FILTER='autohostlist'
 		set $cfgname.config.DISABLE_CUSTOM='1'
 		set $cfgname.config.WS_USER='daemon'
 		set $cfgname.config.DAEMON_LOG_ENABLE='0'
