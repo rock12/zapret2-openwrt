@@ -8,6 +8,7 @@ AUTOHOSTS="/opt/zapret2/ipset/zapret-hosts-auto.txt"
 AUTOHOSTS_DEBUG="/opt/zapret2/ipset/zapret-hosts-auto-debug.log"
 AUTO_CIDR_LIST="/opt/zapret2/ipset/zapret-hosts-auto-cidr.txt"
 EXCLUDE_HOSTS="/opt/zapret2/ipset/zapret-hosts-user-exclude.txt"
+EXCLUDE_IPS="/opt/zapret2/ipset/zapret-ip-user-exclude.txt"
 MDIG="/opt/zapret2/mdig/mdig"
 IP2NET="/opt/zapret2/ip2net/ip2net"
 WARP_SH="/opt/zapret2/warp.sh"
@@ -29,10 +30,40 @@ is_russian_domain() {
     esac
 }
 
+is_excluded_domain() {
+    local d="$1"
+    [ -f "$EXCLUDE_HOSTS" ] || return 1
+    local check="$d"
+    while [ -n "$check" ]; do
+        if grep -F -x -q "$check" "$EXCLUDE_HOSTS" 2>/dev/null; then
+            return 0
+        fi
+        case "$check" in
+            *.*) check="${check#*.}" ;;
+            *) break ;;
+        esac
+    done
+    return 1
+}
+
+sync_ip_excludes() {
+    [ -f "$EXCLUDE_IPS" ] || return 0
+    while read -r ex_ip; do
+        ex_ip=$(echo "$ex_ip" | tr -d '\r\n ')
+        [ -n "$ex_ip" ] || continue
+        echo "$ex_ip" | grep -q '^#' && continue
+        nft add element inet zapret2 nozapret { "$ex_ip" } 2>/dev/null || true
+        nft delete element inet zapret2 zapret { "$ex_ip" } 2>/dev/null || true
+    done < "$EXCLUDE_IPS"
+}
+
 # Resolve and determine all IP addresses and CIDR subnets for a domain
 resolve_and_learn() {
     local domain="$1"
     [ -n "$domain" ] || return 0
+
+    # Strip protocol or trailing slashes if passed as URL
+    domain=$(echo "$domain" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||' | tr 'A-Z' 'a-z')
 
     # 1. Strictly skip Russian domains
     if is_russian_domain "$domain"; then
@@ -40,12 +71,11 @@ resolve_and_learn() {
         return 0
     fi
 
-    # Strip protocol or trailing slashes if passed as URL
-    domain=$(echo "$domain" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||' | tr 'A-Z' 'a-z')
-
-    # If already in exclude list, skip
-    if grep -q "^$domain$" "$EXCLUDE_HOSTS" 2>/dev/null; then
-        log "Пропуск: $domain уже в списке исключений"
+    # 2. Check if domain or parent domain is excluded
+    if is_excluded_domain "$domain"; then
+        log "Пропуск: $domain в списке исключений"
+        # If it was erroneously added to auto hosts, remove it
+        sed -i "/^$domain$/d" "$AUTOHOSTS" 2>/dev/null || true
         return 0
     fi
 
@@ -99,6 +129,14 @@ resolve_and_learn() {
     touch "$AUTO_CIDR_LIST"
     while read -r target; do
         [ -n "$target" ] || continue
+        # Check if target IP/CIDR is in exclude list or nozapret set
+        if [ -f "$EXCLUDE_IPS" ] && grep -F -x -q "$target" "$EXCLUDE_IPS" 2>/dev/null; then
+            continue
+        fi
+        if nft list set inet zapret2 nozapret 2>/dev/null | grep -F -q "$target"; then
+            continue
+        fi
+
         nft add element inet zapret2 zapret { "$target" } 2>/dev/null || true
         if ! grep -q "^$target$" "$AUTO_CIDR_LIST" 2>/dev/null; then
             echo "$target" >> "$AUTO_CIDR_LIST"
@@ -127,6 +165,7 @@ run_daemon() {
 
     log "Демон автоматического определения доменов и IPCIDR запущен (PID: $$)"
 
+    sync_ip_excludes
     SEEN_FILE="/tmp/zapret2_autolearn_seen.txt"
     touch "$SEEN_FILE"
 
