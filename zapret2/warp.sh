@@ -285,8 +285,9 @@ warp_uci_setup() {
     fi
 
     if [ "$has_awg" = "1" ]; then
-        _log "Настройка WARP с обфускацией AmneziaWG (из $awg_conf)..."
-        local jc jmin jmax s1 s2 h1 h2 h3 h4 i1 addr
+        _log "Настройка WARP с обфускацией AmneziaWG 2.0/3.1 (из $awg_conf)..."
+        local jc jmin jmax s1 s2 s3 s4 h1 h2 h3 h4 i1 i2 i3 i4 i5
+        local hpk cpa rt dc rat rtmo rjat kto mha addr
         eval "$(awk '
         BEGIN{ sec="" }
         {
@@ -305,11 +306,26 @@ warp_uci_setup() {
             if (k=="jmax") print "jmax=\"" v "\""
             if (k=="s1") print "s1=\"" v "\""
             if (k=="s2") print "s2=\"" v "\""
+            if (k=="s3") print "s3=\"" v "\""
+            if (k=="s4") print "s4=\"" v "\""
             if (k=="h1") print "h1=\"" v "\""
             if (k=="h2") print "h2=\"" v "\""
             if (k=="h3") print "h3=\"" v "\""
             if (k=="h4") print "h4=\"" v "\""
             if (k=="i1") print "i1=\"" v "\""
+            if (k=="i2") print "i2=\"" v "\""
+            if (k=="i3") print "i3=\"" v "\""
+            if (k=="i4") print "i4=\"" v "\""
+            if (k=="i5") print "i5=\"" v "\""
+            if (k=="headerprotectionkey") print "hpk=\"" v "\""
+            if (k=="contentpaddingaddition") print "cpa=\"" v "\""
+            if (k=="randomtrailers") print "rt=\"" v "\""
+            if (k=="disablecookies") print "dc=\"" v "\""
+            if (k=="rekeyaftertime") print "rat=\"" v "\""
+            if (k=="rekeytimeout") print "rtmo=\"" v "\""
+            if (k=="rejectaftertime") print "rjat=\"" v "\""
+            if (k=="keepalivetimeout") print "kto=\"" v "\""
+            if (k=="maxhandshakeattempts") print "mha=\"" v "\""
           } else if (sec=="peer") {
             if (k=="publickey") print "pub=\"" v "\""
             if (k=="endpoint") print "ep=\"" v "\""
@@ -348,11 +364,26 @@ warp_uci_setup() {
         [ -n "$jmax" ] && uci set network.warp.awg_jmax="$jmax"
         [ -n "$s1" ] && uci set network.warp.awg_s1="$s1"
         [ -n "$s2" ] && uci set network.warp.awg_s2="$s2"
+        [ -n "$s3" ] && uci set network.warp.awg_s3="$s3"
+        [ -n "$s4" ] && uci set network.warp.awg_s4="$s4"
         [ -n "$h1" ] && uci set network.warp.awg_h1="$h1"
         [ -n "$h2" ] && uci set network.warp.awg_h2="$h2"
         [ -n "$h3" ] && uci set network.warp.awg_h3="$h3"
         [ -n "$h4" ] && uci set network.warp.awg_h4="$h4"
         [ -n "$i1" ] && uci set network.warp.awg_i1="$i1"
+        [ -n "$i2" ] && uci set network.warp.awg_i2="$i2"
+        [ -n "$i3" ] && uci set network.warp.awg_i3="$i3"
+        [ -n "$i4" ] && uci set network.warp.awg_i4="$i4"
+        [ -n "$i5" ] && uci set network.warp.awg_i5="$i5"
+        [ -n "$hpk" ] && uci set network.warp.awg_header_protection_key="$hpk"
+        [ -n "$cpa" ] && uci set network.warp.awg_content_padding_addition="$cpa"
+        [ -n "$rt" ] && uci set network.warp.awg_random_trailers="$rt"
+        [ -n "$dc" ] && uci set network.warp.awg_disable_cookies="$dc"
+        [ -n "$rat" ] && uci set network.warp.awg_rekey_after_time="$rat"
+        [ -n "$rtmo" ] && uci set network.warp.awg_rekey_timeout="$rtmo"
+        [ -n "$rjat" ] && uci set network.warp.awg_reject_after_time="$rjat"
+        [ -n "$kto" ] && uci set network.warp.awg_keepalive_timeout="$kto"
+        [ -n "$mha" ] && uci set network.warp.awg_max_handshake_attempts="$mha"
 
         uci set network.amneziawg_warp=amneziawg_warp
         uci set network.amneziawg_warp.name='warp_peer'
