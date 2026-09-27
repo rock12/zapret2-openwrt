@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.lua text eol=lf
+*.default text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.bin binary
+*.apk binary
+*.ipk binary

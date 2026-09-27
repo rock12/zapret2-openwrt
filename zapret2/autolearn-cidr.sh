@@ -167,16 +167,17 @@ resolve_and_learn() {
 
 # Continuous daemon loop monitoring failing connections
 run_daemon() {
+    local ddom=""
     # Ensure lock
     if [ -f "$LOCKFILE" ]; then
-        PID=$(cat "$LOCKFILE")
-        if kill -0 "$PID" 2>/dev/null; then
+        PID=$(cat "$LOCKFILE" 2>/dev/null)
+        if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
             echo "Daemon already running with PID $PID"
             exit 0
         fi
     fi
     echo $$ > "$LOCKFILE"
-    trap "rm -f $LOCKFILE; exit 0" INT TERM EXIT
+    trap "rm -f '$LOCKFILE'; exit 0" INT TERM EXIT
 
     log "Демон автоматического определения доменов и IPCIDR запущен (PID: $$)"
 
@@ -187,7 +188,6 @@ run_daemon() {
         # 1. Tail debug log for instant triggers (real-time fail detection)
         if [ -s "$AUTOHOSTS_DEBUG" ]; then
             # Format: 'DD.MM.YYYY HH:MM:SS : <domain> : profile ... : adding to ...'
-            local ddom
             ddom=$(tail -n 5 "$AUTOHOSTS_DEBUG" | awk -F ' : ' '/adding to/ {print $2}' | tr -d ' ' | tail -n 1)
             if [ -n "$ddom" ] && ! grep -q "^$ddom$" "$SEEN_FILE" 2>/dev/null; then
                 echo "$ddom" >> "$SEEN_FILE"

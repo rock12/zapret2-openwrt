@@ -91,7 +91,9 @@ function start
 
 function stop
 {
+	[ -f /tmp/zapret2_autolearn.lock ] && kill $(cat /tmp/zapret2_autolearn.lock 2>/dev/null) 2>/dev/null || true
 	killall autolearn-cidr.sh 2>/dev/null || true
+	rm -f /tmp/zapret2_autolearn.lock
 	if [ -x /opt/zapret2/warp.sh ]; then
 		/opt/zapret2/warp.sh down >/dev/null 2>&1 || true
 	fi
@@ -109,7 +111,9 @@ function restart
 			/opt/zapret2/warp.sh down >/dev/null 2>&1 || true
 		fi
 	fi
+	[ -f /tmp/zapret2_autolearn.lock ] && kill $(cat /tmp/zapret2_autolearn.lock 2>/dev/null) 2>/dev/null || true
 	killall autolearn-cidr.sh 2>/dev/null || true
+	rm -f /tmp/zapret2_autolearn.lock
 	if [ -x /opt/zapret2/autolearn-cidr.sh ]; then
 		(exec 1000>&-; /opt/zapret2/autolearn-cidr.sh daemon >/dev/null 2>&1) &
 	fi

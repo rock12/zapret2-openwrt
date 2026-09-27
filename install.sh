@@ -79,6 +79,7 @@ if [ "$PKG_MGR" = "apk" ]; then
     if ! apk info -e kmod-amneziawg >/dev/null 2>&1 && ! apk info -e kmod-wireguard >/dev/null 2>&1; then
         echo "      -> Установка WireGuard как альтернативного провайдера..."
         apk add kmod-wireguard wireguard-tools luci-proto-wireguard 2>/dev/null || true
+        /etc/init.d/network reload 2>/dev/null || true
     fi
 
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
@@ -197,7 +198,8 @@ else
     fi
 fi
 
-# 5. Установка прав на исполнение
+# 5. Устранение CRLF и установка прав на исполнение
+sed -i 's/\r$//' "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/warp/*.sh /etc/init.d/zapret2 2>/dev/null || true
 chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null || true
 chmod +x /etc/init.d/zapret2
 [ -f "$INSTALL_DIR/warp/WARP.conf" ] && chmod 600 "$INSTALL_DIR/warp/WARP.conf"
