@@ -69,6 +69,7 @@ if [ "$PKG_MGR" = "apk" ]; then
         fi
     done
 
+    # AmneziaWG packages
     for p in $AMNEZIA_PKGS; do
         if apk info -e "$p" >/dev/null 2>&1; then
             echo -e "      ${GREEN}✓${NC} $p (уже установлен)"
@@ -76,11 +77,6 @@ if [ "$PKG_MGR" = "apk" ]; then
             apk add "$p" 2>/dev/null || true
         fi
     done
-    if ! apk info -e kmod-amneziawg >/dev/null 2>&1 && ! apk info -e kmod-wireguard >/dev/null 2>&1; then
-        echo "      -> Установка WireGuard как альтернативного провайдера..."
-        apk add kmod-wireguard wireguard-tools luci-proto-wireguard 2>/dev/null || true
-        /etc/init.d/network reload 2>/dev/null || true
-    fi
 
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
     ARCH=""
@@ -121,10 +117,6 @@ else
             opkg install "$p" 2>/dev/null || true
         fi
     done
-    if ! opkg list-installed | grep -qw "^kmod-amneziawg" && ! opkg list-installed | grep -qw "^kmod-wireguard"; then
-        echo "      -> Установка WireGuard как альтернативного провайдера..."
-        opkg install kmod-wireguard wireguard-tools luci-proto-wireguard 2>/dev/null || true
-    fi
 
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
     ARCH=""
@@ -224,7 +216,7 @@ uci -q set zapret2.config.MODE_FILTER='autohostlist' || true
 uci -q set zapret2.config.AUTOHOSTLIST_DEBUGLOG='1' || true
 uci -q set zapret2.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443' || true
 uci -q set zapret2.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-50100' || true
-uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11 --new --filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:blob=discord_udp:repeats=6' || true
+uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero --new --filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --new --filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11 --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:blob=discord_udp:repeats=6' || true
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='1' || true
