@@ -196,6 +196,35 @@ chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null || true
 chmod +x /etc/init.d/zapret2
 [ -f "$INSTALL_DIR/warp/WARP.conf" ] && chmod 600 "$INSTALL_DIR/warp/WARP.conf"
 
+# Распаковка и установка Lua-модулей z2k и zapret2
+gzip -d -k "$INSTALL_DIR"/lua/*.gz 2>/dev/null || true
+cp -f "$INSTALL_DIR"/files/lua/*.lua "$INSTALL_DIR"/lua/ 2>/dev/null || true
+mkdir -p "$INSTALL_DIR/extra_strats/cache/autocircular"
+chown -R daemon:daemon "$INSTALL_DIR/extra_strats" 2>/dev/null || true
+
+# Патч LUAOPT в init-скриптах для автоподключения модулей ротации и детекции z2k
+sed -i 's|LUAOPT=.*|LUAOPT=\"--lua-init=@\$ZAPRET_BASE/lua/zapret-lib.lua --lua-init=@\$ZAPRET_BASE/lua/zapret-antidpi.lua --lua-init=@\$ZAPRET_BASE/lua/zapret-auto.lua --lua-init=@\$ZAPRET_BASE/lua/z2k-alert.lua --lua-init=@\$ZAPRET_BASE/lua/z2k-modern-core.lua --lua-init=@\$ZAPRET_BASE/lua/z2k-state-persist.lua\"|g' /opt/zapret2/init.d/sysv/functions 2>/dev/null || true
+
+# Установка прозрачного туннеля для Telegram (tg-tunnel)
+mkdir -p /etc/nftables.d
+[ -f "$INSTALL_DIR/90-telegram.nft" ] && cp -f "$INSTALL_DIR/90-telegram.nft" /etc/nftables.d/90-telegram.nft
+[ -f "$INSTALL_DIR/tg-tunnel.init" ] && cp -f "$INSTALL_DIR/tg-tunnel.init" /etc/init.d/tg-tunnel && chmod +x /etc/init.d/tg-tunnel
+
+if [ ! -x /usr/bin/tg-mtproxy-client ]; then
+    TG_ARCH="$(uname -m)"
+    TG_URL=""
+    case "$TG_ARCH" in
+        aarch64*) TG_URL="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/mtproxy-client/builds/tg-mtproxy-client-linux-arm64" ;;
+        x86_64*)  TG_URL="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/mtproxy-client/builds/tg-mtproxy-client-linux-amd64" ;;
+        arm*)     TG_URL="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/mtproxy-client/builds/tg-mtproxy-client-linux-arm" ;;
+        mips*el*) TG_URL="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/mtproxy-client/builds/tg-mtproxy-client-linux-mipsel" ;;
+        mips*)    TG_URL="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/mtproxy-client/builds/tg-mtproxy-client-linux-mips" ;;
+    esac
+    if [ -n "$TG_URL" ]; then
+        curl -sSL -o /usr/bin/tg-mtproxy-client "$TG_URL" 2>/dev/null && chmod +x /usr/bin/tg-mtproxy-client || true
+    fi
+fi
+
 # Настройка hotplug для восстановления маршрутов WARP
 cat > /etc/hotplug.d/iface/99-warp << 'EOF'
 [ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "warp" ] || exit 0
@@ -216,7 +245,7 @@ uci -q set zapret2.config.MODE_FILTER='autohostlist' || true
 uci -q set zapret2.config.AUTOHOSTLIST_DEBUGLOG='1' || true
 uci -q set zapret2.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443' || true
 uci -q set zapret2.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-50100' || true
-uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero --new --filter-tcp=2053,2083,2087,2096,8443 --filter-l7=tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google --new --filter-tcp=80,443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --payload=http_req --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11 --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:blob=discord_udp:repeats=6' || true
+uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --blob=tls_4pda:@/opt/zapret2/files/fake/tls_clienthello_4pda_to.bin --blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=3:time=300:retrans=2:key=google_tls:nld=2 --lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up:strategy=1 --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero:strategy=1 --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up:strategy=2 --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-1000:strategy=3 --lua-desync=multidisorder:pos=1,sniext+1:seqovl=1:strategy=3 --lua-desync=fake:blob=tls_google:repeats=10:strategy=4 --lua-desync=multisplit:pos=1:seqovl=681:strategy=4 --in-range=x --new --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=3:time=60:retrans=2:maxseq=32768:inseq=4096:key=rkn_tcp:nld=2 --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up:strategy=1 --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max:strategy=1 --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up:strategy=2 --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:strategy=2 --lua-desync=hostfakesplit:seqovl=726:badsum:badseq:badseq_increment=0:strategy=3 --lua-desync=fake:blob=tls_4pda:repeats=8:strategy=4 --lua-desync=multisplit:pos=1:seqovl=568:seqovl_pattern=tls_4pda:strategy=4 --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=2:strategy=5 --lua-desync=multidisorder:pos=1,midsld:strategy=5 --lua-desync=fake:blob=tls_max:repeats=8:strategy=6 --lua-desync=fakedsplit:pos=1:strategy=6 --payload=http_req --lua-desync=http_methodeol:badsum:strategy=1 --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up:strategy=2 --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max:strategy=2 --in-range=x --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11 --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --in-range=-d100 --out-range=-d100 --payload=discord_ip_discovery,stun --lua-desync=circular:fails=3:time=60:udp_in=1:udp_out=4:key=discord_voice:nld=2:hostkey=z2k_nohost_key --lua-desync=fake:blob=discord_udp:repeats=6:strategy=1 --lua-desync=fake:blob=stun_fake:repeats=8:strategy=2 --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=4:strategy=3' || true
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='1' || true
@@ -227,6 +256,8 @@ for g in WARZONE BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALOR
     if [ -z "$(uci -q get zapret2.config.WARP_GAME_$g)" ]; then
         uci -q set zapret2.config.WARP_GAME_$g='1' || true
     fi
+done
+
 # Оптимизация DNS: предотвращение утечек IPv6 мимо Zapret2 и фикс IP-бана Instagram
 uci set dhcp.@dnsmasq[0].filter_aaaa='1' 2>/dev/null || true
 if ! uci -q get dhcp.@dnsmasq[0].address | grep -q '31.13.72.36'; then
@@ -243,6 +274,9 @@ echo -e "\n${YELLOW}[5/6] Включение автозагрузки и зап�
 /etc/init.d/https-dns-proxy restart 2>/dev/null || true
 /etc/init.d/zapret2 enable 2>/dev/null || true
 /etc/init.d/zapret2 restart 2>/dev/null || true
+/etc/init.d/tg-tunnel enable 2>/dev/null || true
+/etc/init.d/tg-tunnel restart 2>/dev/null || true
+fw4 reload 2>/dev/null || true
 
 # Установка и запуск TG WS Proxy для Telegram (Socks5 порт 2080)
 if [ -x "$INSTALL_DIR/tg_proxy.sh" ]; then

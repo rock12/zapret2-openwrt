@@ -4,6 +4,8 @@
 *.default text eol=lf
 *.txt text eol=lf
 *.json text eol=lf
+*.init text eol=lf
+*.nft text eol=lf
 *.bin binary
 *.apk binary
 *.ipk binary

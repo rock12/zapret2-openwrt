@@ -111,33 +111,6 @@ resolve_and_learn() {
     return 0
 }
 
-    # Ensure domain is in zapret-hosts-auto.txt
-    if ! grep -q "^$domain$" "$AUTOHOSTS" 2>/dev/null; then
-        echo "$domain" >> "$AUTOHOSTS"
-    fi
-
-    # 3. Test TCP reachability (check if IP is completely blacklisted/BGP-dropped)
-    local first_ip
-    first_ip=$(head -n 1 "$tmp_ips")
-    local tcp_syn_ok=0
-    
-    # Quick probe: test TCP connection with 2 second timeout
-    if curl -s -m 2 -o /dev/null "https://$first_ip" 2>/dev/null; then
-        tcp_syn_ok=1
-    else
-        local err_code=$?
-        # Code 35 (SSL error), 56, 92, 000 with handshake means TCP connected, DPI intervened (desync will handle it!)
-        # Code 28 (Connection timed out) means TCP SYN is dropped upstream (IP ban!)
-        if [ "$err_code" != "28" ] && [ "$err_code" != "7" ]; then
-            tcp_syn_ok=1
-        fi
-    fi
-
-    log "Все подсети и домен $domain успешно добавлены в список zapret (DPI desync)"
-    rm -f "$tmp_ips" "$tmp_nets"
-    return 0
-}
-
 # Continuous daemon loop monitoring failing connections
 run_daemon() {
     local ddom=""
