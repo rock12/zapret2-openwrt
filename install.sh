@@ -227,7 +227,14 @@ for g in WARZONE BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALOR
     if [ -z "$(uci -q get zapret2.config.WARP_GAME_$g)" ]; then
         uci -q set zapret2.config.WARP_GAME_$g='1' || true
     fi
-done
+# Оптимизация DNS: предотвращение утечек IPv6 мимо Zapret2 и фикс IP-бана Instagram
+uci set dhcp.@dnsmasq[0].filter_aaaa='1' 2>/dev/null || true
+if ! uci -q get dhcp.@dnsmasq[0].address | grep -q '31.13.72.36'; then
+    uci add_list dhcp.@dnsmasq[0].address='/instagram.com/31.13.72.36' 2>/dev/null || true
+    uci add_list dhcp.@dnsmasq[0].address='/cdninstagram.com/31.13.72.36' 2>/dev/null || true
+fi
+uci commit dhcp 2>/dev/null || true
+/etc/init.d/dnsmasq restart 2>/dev/null || true
 uci commit zapret2 2>/dev/null || true
 
 # 7. Запуск сервисов

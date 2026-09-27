@@ -94,37 +94,7 @@ resolve_and_learn() {
     local first_ip
     first_ip=$(head -n 1 "$tmp_ips")
 
-    # 2. Test DIRECT reachability on WAN (check if site works without desync)
-    local direct_ok=0
-    local http_code
-    http_code=$(curl -s -k -o /dev/null -w "%{http_code}" --connect-timeout 2 -m 3 --resolve "$domain:443:$first_ip" "https://$domain" 2>/dev/null || echo "000")
-
-    case "$http_code" in
-        200|301|302|304|307|308|401|403|404|405|418)
-            local redir_loc
-            redir_loc=$(curl -sI -k --connect-timeout 2 -m 3 --resolve "$domain:443:$first_ip" "https://$domain" 2>/dev/null | grep -i '^location:' | head -n 1)
-            if ! echo "$redir_loc" | grep -qiE 'warning\.|eais\.|block|zapret|denied|stub|ertelecom'; then
-                direct_ok=1
-            fi
-            ;;
-    esac
-
-    if [ "$direct_ok" = "1" ]; then
-        log "Ресурс $domain ($first_ip) доступен напрямую (HTTP $http_code). Добавлен в EXCLUDE (FastPath)."
-        if ! grep -q "^$domain$" "$EXCLUDE_HOSTS" 2>/dev/null; then
-            echo "$domain" >> "$EXCLUDE_HOSTS"
-        fi
-        while read -r target; do
-            [ -n "$target" ] || continue
-            nft add element inet zapret2 nozapret { "$target" } 2>/dev/null || true
-            nft delete element inet zapret2 zapret { "$target" } 2>/dev/null || true
-        done < "$tmp_nets"
-        sed -i "/^$domain$/d" "$AUTOHOSTS" 2>/dev/null || true
-        rm -f "$tmp_ips" "$tmp_nets"
-        return 0
-    fi
-
-    # 3. If direct connection fails, inject all resolved IPs & CIDRs into nftables set 'zapret'
+    # Inject all resolved IPs & CIDRs into nftables set 'zapret'
     local added_count=0
     touch "$AUTO_CIDR_LIST"
     while read -r target; do
@@ -137,6 +107,9 @@ resolve_and_learn() {
     done < "$tmp_nets"
 
     log "Добавлено в nftables zapret (TCP/UDP): $added_count подсетей/IP для $domain"
+    rm -f "$tmp_ips" "$tmp_nets"
+    return 0
+}
 
     # Ensure domain is in zapret-hosts-auto.txt
     if ! grep -q "^$domain$" "$AUTOHOSTS" 2>/dev/null; then
@@ -236,12 +209,12 @@ run_daemon() {
                         ;;
                 esac
 
-                # Verify if WAN TCP SYN times out (hard IP block) with 3s timeout and retry
-                if ! nc -w 3 "$dead_ip" 443 </dev/null >/dev/null 2>&1; then
-                    sleep 1
-                    if ! nc -w 3 "$dead_ip" 443 </dev/null >/dev/null 2>&1; then
-                        log "Обнаружен подтвержденный IP-бан (TCP SYN drop) к $dead_ip. Автоматическое перенаправление в WARP..."
-                        if [ -x /opt/zapret2/warp.sh ]; then
+                # Only check and route to WARP if warp interface is actually UP
+                if [ -x /opt/zapret2/warp.sh ] && ip link show dev warp 2>/dev/null | grep -q "UP"; then
+                    if ! curl -k -s --connect-timeout 2 "https://$dead_ip/" -o /dev/null 2>/dev/null; then
+                        sleep 1
+                        if ! curl -k -s --connect-timeout 2 "https://$dead_ip/" -o /dev/null 2>/dev/null; then
+                            log "Обнаружен подтвержденный IP-бан (TCP SYN drop) к $dead_ip. Перенаправление в WARP..."
                             /opt/zapret2/warp.sh add_target "$dead_ip"
                         fi
                     fi

@@ -451,6 +451,10 @@ filter_ipv4_file() {
 }
 
 warp_pbr_up() {
+    if ! ip link show dev warp 2>/dev/null | grep -q "UP"; then
+        _log "Интерфейс warp не поднят, активация PBR маршрутизации пропущена."
+        return 0
+    fi
     _log "Активация PBR маршрутизации в WARP (таблица $WARP_TABLE)..."
     
     ip route replace default dev warp table "$WARP_TABLE" 2>/dev/null || true
@@ -584,6 +588,10 @@ warp_add_target() {
     local target="$1"
     [ -n "$target" ] || return 1
     
+    if ! ip link show dev warp 2>/dev/null | grep -q "UP"; then
+        return 0
+    fi
+
     mkdir -p "$WARP_DIR"
     touch "$WARP_DIR/auto_targets.txt"
     if ! grep -q "^$target$" "$WARP_DIR/auto_targets.txt" 2>/dev/null; then
