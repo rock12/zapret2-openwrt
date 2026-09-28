@@ -216,9 +216,12 @@ cp -f "$INSTALL_DIR"/files/lua/*.lua "$INSTALL_DIR"/lua/ 2>/dev/null || true
 mkdir -p "$INSTALL_DIR/extra_strats/cache/autocircular"
 chown -R daemon:daemon "$INSTALL_DIR/extra_strats" 2>/dev/null || true
 
-# Патч LUAOPT в init-скриптах для автоподключения модулей ротации и детекции z2k
+# Патч LUAOPT и BLOB_OPTS в init-скриптах для автоподключения модулей ротации, детекции z2k и фейковых блобов
 for f in /opt/zapret2/init.d/sysv/functions /opt/zapret2/init.d/openwrt/zapret2; do
-    [ -f "$f" ] && sed -i 's|LUAOPT=.*|LUAOPT=\"--lua-init=@\$ZAPRET_BASE/lua/zapret-lib.lua --lua-init=@\$ZAPRET_BASE/lua/zapret-antidpi.lua --lua-init=@\$ZAPRET_BASE/lua/zapret-auto.lua --lua-init=@\$ZAPRET_BASE/lua/z2k-alert.lua --lua-init=@\$ZAPRET_BASE/lua/z2k-modern-core.lua --lua-init=@\$ZAPRET_BASE/lua/z2k-state-persist.lua\"|g' "$f" 2>/dev/null || true
+    if [ -f "$f" ]; then
+        sed -i 's|LUAOPT=.*|LUAOPT="--lua-init=@$ZAPRET_BASE/lua/zapret-lib.lua --lua-init=@$ZAPRET_BASE/lua/zapret-antidpi.lua --lua-init=@$ZAPRET_BASE/lua/zapret-auto.lua --lua-init=@$ZAPRET_BASE/lua/z2k-alert.lua --lua-init=@$ZAPRET_BASE/lua/z2k-quic-silence.lua --lua-init=@$ZAPRET_BASE/lua/z2k-tcp16.lua --lua-init=@$ZAPRET_BASE/lua/z2k-fooling-ext.lua --lua-init=@$ZAPRET_BASE/lua/z2k-range-rand.lua --lua-init=@$ZAPRET_BASE/lua/z2k-modern-core.lua --lua-init=@$ZAPRET_BASE/lua/z2k-state-persist.lua"\nBLOB_OPTS="--blob=quic_google:@$ZAPRET_BASE/files/fake/quic_initial_www_google_com.bin --blob=quic5:@$ZAPRET_BASE/files/fake/quic_5.bin --blob=quic4:@$ZAPRET_BASE/files/fake/quic_4.bin --blob=quic6:@$ZAPRET_BASE/files/fake/quic_6.bin --blob=quic1:@$ZAPRET_BASE/files/fake/quic_1.bin --blob=quic_rutracker:@$ZAPRET_BASE/files/fake/quic_initial_rutracker_org.bin --blob=quic_dbankcloud:@$ZAPRET_BASE/files/fake/quic_initial_dbankcloud_ru.bin --blob=discord_udp:@$ZAPRET_BASE/files/fake/stun.bin --blob=stun:@$ZAPRET_BASE/files/fake/stun.bin --blob=syn_packet:@$ZAPRET_BASE/files/fake/syn_packet.bin --blob=t2:@$ZAPRET_BASE/files/fake/t2.bin --blob=tls_max_ru:@$ZAPRET_BASE/files/fake/tls_clienthello_max_ru.bin --blob=tls_clienthello_14:@$ZAPRET_BASE/files/fake/tls_clienthello_14.bin --blob=tls_clienthello_www_google_com:@$ZAPRET_BASE/files/fake/tls_clienthello_www_google_com.bin --blob=tls_clienthello_4pda_to:@$ZAPRET_BASE/files/fake/tls_clienthello_4pda_to.bin --blob=tls_clienthello_vk_com:@$ZAPRET_BASE/files/fake/tls_clienthello_vk_com.bin --blob=tls_clienthello_gosuslugi_ru:@$ZAPRET_BASE/files/fake/tls_clienthello_gosuslugi_ru.bin --blob=tls_clienthello_activated:@$ZAPRET_BASE/files/fake/tls_clienthello_activated.bin --blob=tls_clienthello_www_onetrust_com:@$ZAPRET_BASE/files/fake/tls_clienthello_www_onetrust_com.bin"|g' "$f" 2>/dev/null || true
+        sed -i 's|NFQWS2_OPT_BASE=.*|NFQWS2_OPT_BASE="$USEROPT --fwmark=$DESYNC_MARK --bind-fix4 --bind-fix6 $LUAOPT $BLOB_OPTS"|g' "$f" 2>/dev/null || true
+    fi
 done
 
 # Установка прозрачного туннеля для Telegram (tg-tunnel)
