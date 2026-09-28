@@ -458,14 +458,51 @@ game_uci_opt() {
     esac
 }
 
+warp_get_device_ips() {
+    local devs=""
+    # 1. From UCI config
+    if command -v uci >/dev/null 2>&1; then
+        devs=$(uci -q get zapret2.config.WARP_DEVICES)
+    fi
+    # 2. From devices.txt file
+    if [ -s "$WARP_DIR/devices.txt" ]; then
+        local file_devs
+        file_devs=$(grep -vE '^[[:space:]]*(#|$)' "$WARP_DIR/devices.txt" 2>/dev/null)
+        devs="$devs $file_devs"
+    fi
+    [ -n "$devs" ] || return 0
+
+    local neigh leases
+    neigh=$(ip -4 neigh show 2>/dev/null | awk '$0 ~ /lladdr/ {for (i=1;i<=NF;i++) if ($i=="lladdr") printf "%s %s\n", tolower($(i+1)), $1}')
+    [ -s /tmp/dhcp.leases ] && leases=$(awk '{printf "%s %s\n", tolower($2), $3}' /tmp/dhcp.leases 2>/dev/null)
+
+    for d in $devs; do
+        d=$(printf '%s' "$d" | tr 'A-Z' 'a-z' | tr -d ' \t\r\n')
+        [ -n "$d" ] || continue
+        # IPv4
+        if echo "$d" | grep -qE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'; then
+            echo "$d"
+        # MAC
+        elif echo "$d" | grep -qE '^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$'; then
+            d=$(echo "$d" | tr '-' ':')
+            local rip
+            rip=$(echo "$neigh" | awk -v m="$d" '$1==m {print $2; exit}')
+            [ -z "$rip" ] && rip=$(echo "$leases" | awk -v m="$d" '$1==m {print $2; exit}')
+            [ -n "$rip" ] && echo "$rip"
+        fi
+    done | sort -u
+}
+
 # Setup PBR routing tables and rules
 filter_ipv4_file() {
     [ -f "$1" ] || return 0
-    # Extract valid IPv4, enforce /16 to /32 masks only (drops /0../15 wide cloud provider CIDRs),
-    # and strictly exclude private IPs, loopbacks, multicast, Cloudflare CDN (to avoid loops), and GitHub.
-    grep -oE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?' "$1" 2>/dev/null \
-        | grep -vE '/([0-9]|1[0-5])$' \
-        | grep -vE '^(0\.|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|104\.(1[6-9]|2[0-9]|3[0-1])\.|172\.(6[4-9]|7[0-1])\.|140\.82\.|8\.8\.|1\.1\.1\.1|1\.0\.0\.1|22[4-9]\.|2[3-5][0-9]\.)' || true
+    if [ -f "$WARP_DIR/warp-list-filter.awk" ]; then
+        awk -v mode=ipset -f "$WARP_DIR/warp-list-filter.awk" "$1" 2>/dev/null
+    else
+        grep -oE '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(/[0-9]{1,2})?' "$1" 2>/dev/null \
+            | grep -vE '/([0-9]|1[0-5])$' \
+            | grep -vE '^(0\.|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|104\.(1[6-9]|2[0-9]|3[0-1])\.|172\.(6[4-9]|7[0-1])\.|140\.82\.|8\.8\.|1\.1\.1\.1|1\.0\.0\.1|22[4-9]\.|2[3-5][0-9]\.)' || true
+    fi
 }
 
 warp_pbr_up() {
@@ -479,10 +516,14 @@ warp_pbr_up() {
     ip rule del fwmark "$FWMARK" table "$WARP_TABLE" 2>/dev/null || true
     ip rule add fwmark "$FWMARK" table "$WARP_TABLE" pref 1000
 
+    local dev_ips
+    dev_ips=$(warp_get_device_ips)
+
     if [ -x /sbin/fw4 ]; then
         nft delete table inet zapret2_warp 2>/dev/null || true
         nft add table inet zapret2_warp 2>/dev/null || true
         nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; auto-merge; }' 2>/dev/null || true
+        nft add set inet zapret2_warp warp_devices '{ type ipv4_addr; flags interval; auto-merge; }' 2>/dev/null || true
         
         local tmp_nft="/tmp/warp_targets.nft"
         local tmp_ips="/tmp/warp_raw_ips.txt"
@@ -525,12 +566,35 @@ EOF
         fi
         rm -f "$tmp_nft" "$tmp_ips"
 
+        # Load devices into warp_devices set
+        if [ -n "$dev_ips" ]; then
+            local dev_nft="/tmp/warp_devs.nft"
+            cat << 'EOF' > "$dev_nft"
+table inet zapret2_warp {
+    set warp_devices {
+        type ipv4_addr
+        flags interval
+        auto-merge
+        elements = {
+EOF
+            echo "$dev_ips" | sed 's/$/,/' >> "$dev_nft"
+            echo "        127.0.0.3 }" >> "$dev_nft"
+            echo "    }" >> "$dev_nft"
+            echo "}" >> "$dev_nft"
+            nft -f "$dev_nft" 2>/dev/null || true
+            rm -f "$dev_nft"
+            _log "Устройства через WARP добавлены в nftables: $(echo "$dev_ips" | tr '\n' ' ')"
+        fi
+
         nft add chain inet zapret2_warp prerouting '{ type filter hook prerouting priority mangle - 1; }' 2>/dev/null || true
-        nft add rule inet zapret2_warp prerouting ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
-        nft add chain inet zapret2_warp output '{ type filter hook output priority mangle - 1; }' 2>/dev/null || true
-        nft add rule inet zapret2_warp output ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
+        if [ -n "$dev_ips" ]; then
+            # Exclude local/private destinations so devices can still communicate within LAN and query router DNS
+            nft add rule inet zapret2_warp prerouting ip saddr @warp_devices ip daddr != '{ 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 255.255.255.255 }' meta mark set "$FWMARK" counter return 2>/dev/null || true
+        fi
+        nft add rule inet zapret2_warp prerouting ip daddr @warp_targets meta mark set "$FWMARK" counter return 2>/dev/null || true
     else
         ipset create warp_targets hash:net maxelem 65536 2>/dev/null || ipset flush warp_targets 2>/dev/null || true
+        ipset create warp_devices hash:ip 2>/dev/null || ipset flush warp_devices 2>/dev/null || true
 
         if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
             filter_ipv4_file "$WARP_DIR/games_user.txt" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
@@ -545,10 +609,20 @@ EOF
                 filter_ipv4_file "$gf" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
             fi
         done
+
+        if [ -n "$dev_ips" ]; then
+            echo "$dev_ips" | while read -r dip; do
+                [ -n "$dip" ] && ipset add warp_devices "$dip" 2>/dev/null
+            done
+            iptables -t mangle -D PREROUTING -m set --match-set warp_devices src -m set ! --match-set zapret2-local dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
+            iptables -t mangle -A PREROUTING -m set --match-set warp_devices src -m set ! --match-set zapret2-local dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
+            _log "Устройства через WARP добавлены в ipset: $(echo "$dev_ips" | tr '\n' ' ')"
+        fi
+
         iptables -t mangle -D PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
         iptables -t mangle -A PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
     fi
-    _log "PBR правила для Игр успешно применены."
+    _log "PBR правила для Игр и Устройств успешно применены."
 }
 
 warp_pbr_down() {
@@ -560,7 +634,9 @@ warp_pbr_down() {
         nft delete table inet zapret2_warp 2>/dev/null || true
     else
         iptables -t mangle -D PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
+        iptables -t mangle -D PREROUTING -m set --match-set warp_devices src -m set ! --match-set zapret2-local dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
         ipset destroy warp_targets 2>/dev/null || true
+        ipset destroy warp_devices 2>/dev/null || true
     fi
 }
 

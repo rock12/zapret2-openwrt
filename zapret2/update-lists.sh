@@ -1,10 +1,12 @@
 #!/bin/sh
 # List auto-updater for zapret2 and warp games/telegram
+# Uses YOZH3G/ru-gaming-blocklist (the conservative, reviewed fork) with strict bogon/cloud filtering
 
 ZAPRET2_DIR="${ZAPRET2_DIR:-/opt/zapret2}"
 WARP_DIR="$ZAPRET2_DIR/warp"
 GAMES_DIR="$WARP_DIR/games"
-BASE_GAMES_URL="https://raw.githubusercontent.com/medvedeff-true/ru-gaming-blocklist/main"
+FILTER_AWK="$WARP_DIR/warp-list-filter.awk"
+BASE_GAMES_URL="https://raw.githubusercontent.com/YOZH3G/ru-gaming-blocklist/main"
 LOG_FILE="/tmp/zapret2-update-lists.log"
 
 _log() {
@@ -26,7 +28,7 @@ update_telegram_ips() {
 }
 
 update_warp_games() {
-    _log "Обновление игровых списков WARP..."
+    _log "Обновление игровых списков WARP из YOZH3G/ru-gaming-blocklist..."
     mkdir -p "$GAMES_DIR"
     local idx="/tmp/games_sources.json"
     if ! curl -sL -m 20 -o "$idx" "$BASE_GAMES_URL/sources.json" || [ ! -s "$idx" ]; then
@@ -35,6 +37,19 @@ update_warp_games() {
         return 1
     fi
 
+    # 1. Update curated community game ipset
+    local cur_ipset="/tmp/medvedeff_ipset.raw"
+    if curl -sL -m 15 -o "$cur_ipset" "$BASE_GAMES_URL/medvedeff-game-ipset.txt" && [ -s "$cur_ipset" ]; then
+        if [ -f "$FILTER_AWK" ]; then
+            awk -v mode=ipset -f "$FILTER_AWK" "$cur_ipset" > "$GAMES_DIR/Community_Gaming_IPs.txt" 2>/dev/null
+        else
+            grep -E '^[0-9]' "$cur_ipset" > "$GAMES_DIR/Community_Gaming_IPs.txt"
+        fi
+        rm -f "$cur_ipset"
+        _log "Обновлен общий чистый игровой пул Community_Gaming_IPs.txt ($(wc -l < "$GAMES_DIR/Community_Gaming_IPs.txt") подсетей)."
+    fi
+
+    # 2. Extract game names
     local names
     names=$(tr -d '\n' < "$idx" \
         | sed -n 's/.*"game_map"[[:space:]]*:[[:space:]]*{\([^}]*\)}.*/\1/p' \
@@ -43,17 +58,31 @@ update_warp_games() {
         | tr ' ' '_')
 
     for g in $names; do
+        # Strictly skip general-purpose cloud providers and catch-alls
         [ "$g" = "Other_Games" ] && continue
+        [ "$g" = "Cloudflare_AWS" ] && continue
         case "$g" in ''|.*|-*|*[!A-Za-z0-9._-]*) continue ;; esac
-        local tmp="/tmp/game_$g.tmp"
-        if curl -sL -m 15 -o "$tmp" "$BASE_GAMES_URL/games/$g.txt" && [ -s "$tmp" ]; then
-            mv "$tmp" "$GAMES_DIR/$g.txt"
+
+        local raw="/tmp/game_${g}.raw"
+        local san="/tmp/game_${g}.san"
+        if curl -sL -m 15 -o "$raw" "$BASE_GAMES_URL/games/$g.txt" && [ -s "$raw" ]; then
+            if [ -f "$FILTER_AWK" ]; then
+                awk -v mode=save -f "$FILTER_AWK" "$raw" > "$san" 2>/dev/null
+                if [ -s "$san" ]; then
+                    mv "$san" "$GAMES_DIR/$g.txt"
+                else
+                    rm -f "$san"
+                fi
+            else
+                mv "$raw" "$GAMES_DIR/$g.txt"
+            fi
+            rm -f "$raw"
         else
-            rm -f "$tmp"
+            rm -f "$raw"
         fi
     done
     rm -f "$idx"
-    _log "Игровые списки обновлены."
+    _log "Игровые списки обновлены и очищены от паразитных подсетей."
     
     # Reload PBR if warp is up
     if [ -x "$ZAPRET2_DIR/warp.sh" ]; then

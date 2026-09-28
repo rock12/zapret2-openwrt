@@ -205,7 +205,7 @@ else
 fi
 
 # 5. Устранение CRLF и установка прав на исполнение
-sed -i 's/\r$//' "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/warp/*.sh /etc/init.d/zapret2 2>/dev/null || true
+sed -i 's/\r$//' "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/warp/*.sh "$INSTALL_DIR"/warp/*.awk "$INSTALL_DIR"/warp/*.txt /etc/init.d/zapret2 2>/dev/null || true
 chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null || true
 chmod +x /etc/init.d/zapret2
 [ -f "$INSTALL_DIR/warp/WARP.conf" ] && chmod 600 "$INSTALL_DIR/warp/WARP.conf"

@@ -756,12 +756,51 @@ return view.extend({
 
         add_delim(s);
 
+        o = s.taboption(tabname, form.DummyValue, '_warp_devices_header');
+        o.rawhtml = true;
+        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('📱 Устройства через WARP (Device Routing)') + '</h3>' +
+            '<p class="cbi-value-description" style="margin-top: 0;">' +
+            _('Укажите IP или MAC-адреса устройств локальной сети (игровые консоли PS5/Xbox, ПК, Smart TV, смартфоны), чей весь внешний трафик пойдет через WARP-туннель. Локальная сеть (доступ к роутеру и между устройствами) сохраняется напрямую.') +
+            '</p>';
+
+        o = s.taboption(tabname, form.DynamicList, 'WARP_DEVICES', _('Устройства через WARP (IP или MAC)'));
+        o.description = _('Например: 192.168.1.150 или aa:bb:cc:dd:ee:ff (сохраняется также в /opt/zapret2/warp/devices.txt)');
+        o.datatype = 'or(ip4addr, macaddr)';
+        o.depends('WARP_ENABLED', '1');
+
+        let origDevRender = o.renderWidget;
+        o.renderWidget = function(section_id, option_index, cfgvalue) {
+            let widget = origDevRender.apply(this, [section_id, option_index, cfgvalue]);
+            let editDevBtn = E('button', {
+                'class': 'btn cbi-button cbi-button-action',
+                'type': 'button',
+                'style': 'margin-left: 15px; vertical-align: middle;',
+                'click': ui.createHandlerFn(this, function(ev) {
+                    ev.preventDefault();
+                    new tools.fileEditDialog({
+                        file: '/opt/zapret2/warp/devices.txt',
+                        title: _('devices.txt (Список устройств)'),
+                        desc: _('Один IP или MAC-адрес на строку (например: 192.168.1.50 или aa:bb:cc:dd:ee:ff). Строки с # — комментарии.'),
+                        rows: 12,
+                    }).show();
+                })
+            }, _('Edit devices.txt'));
+
+            return E('div', { 'style': 'display: inline-flex; align-items: flex-start;' }, [
+                widget,
+                editDevBtn
+            ]);
+        };
+
+        add_delim(s);
+
         o = s.taboption(tabname, form.DummyValue, '_gaming_lists_header');
         o.rawhtml = true;
         o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Gaming IP Lists (Click to View / Edit)') + '</h3>';
 
         const warpGames = [
             { id: 'WARP_GAME_WARZONE', file: 'Warzone_CallOfDuty.txt', title: _('Warzone / Call of Duty (772 subnets)'), desc: _('Warzone / Call of Duty server subnets') },
+            { id: 'WARP_GAME_COMMUNITY', file: 'Community_Gaming_IPs.txt', title: _('Community Curated Gaming IP Pool (YOZH3G)'), desc: _('Verified, conservative community game IP ranges') },
             { id: 'WARP_GAME_BATTLEFIELD6', file: 'Battlefield6.txt', title: _('Battlefield 6 / 2042 IP Ranges'), desc: _('Battlefield 6 & 2042 dedicated servers') },
             { id: 'WARP_GAME_STEAM', file: 'Steam.txt', title: _('Steam IP Ranges'), desc: _('Steam game and voice servers') },
             { id: 'WARP_GAME_EA_ORIGIN', file: 'EA_Origin.txt', title: _('EA / Origin IP Ranges'), desc: _('Electronic Arts / Origin network') },
