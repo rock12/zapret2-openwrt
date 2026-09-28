@@ -57,7 +57,7 @@ if [ "$PKG_MGR" = "apk" ]; then
         sed -i 's/ !https-dns-proxy//g' /lib/apk/db/installed 2>/dev/null || true
     fi
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools https-dns-proxy luci-app-https-dns-proxy"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools https-dns-proxy luci-app-https-dns-proxy luci-i18n-https-dns-proxy-ru"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
     
     for p in $REQUIRED_PKGS; do
@@ -106,7 +106,7 @@ else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools https-dns-proxy luci-app-https-dns-proxy"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools https-dns-proxy luci-app-https-dns-proxy luci-i18n-https-dns-proxy-ru"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
 
     for p in $REQUIRED_PKGS; do
@@ -265,11 +265,21 @@ uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='1' || true
 
 # Включение игр по умолчанию (с возможностью отключения в LuCI)
-for g in WARZONE BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALORANT ROBLOX APEX_ROCKETLEAGUE UBISOFT LEAGUEOFLEGENDS WARFRAME DEADBYDAYLIGHT ARMA_REFORGER MINECRAFT CUSTOM; do
+for g in WARZONE COMMUNITY BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALORANT ROBLOX APEX_ROCKETLEAGUE UBISOFT LEAGUEOFLEGENDS WARFRAME DEADBYDAYLIGHT ARMA_REFORGER MINECRAFT CUSTOM; do
     if [ -z "$(uci -q get zapret2.config.WARP_GAME_$g)" ]; then
         uci -q set zapret2.config.WARP_GAME_$g='1' || true
     fi
 done
+
+# Настройка https-dns-proxy (DoH шифрование DNS-запросов от перехвата ТСПУ)
+if [ -f /etc/config/https-dns-proxy ]; then
+    uci -q set https-dns-proxy.config.dnsmasq_config_update='*' || true
+    uci -q set https-dns-proxy.config.force_dns='1' || true
+    uci -q set https-dns-proxy.config.notrack_dns='1' || true
+    uci -q set https-dns-proxy.config.canary_domains_icloud='1' || true
+    uci -q set https-dns-proxy.config.canary_domains_mozilla='1' || true
+    uci -q commit https-dns-proxy || true
+fi
 
 # Оптимизация DNS: предотвращение утечек IPv6 мимо Zapret2 и фикс IP-бана Instagram
 uci set dhcp.@dnsmasq[0].filter_aaaa='1' 2>/dev/null || true

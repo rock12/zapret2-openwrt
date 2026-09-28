@@ -56,6 +56,7 @@ echo -e "\n${YELLOW}[2/5] Очистка правил nftables и маршрут
 rm -f /etc/nftables.d/90-telegram.nft
 nft delete table inet zapret >/dev/null 2>&1 || true
 nft delete table inet zapret2 >/dev/null 2>&1 || true
+nft delete table inet zapret2_warp >/dev/null 2>&1 || true
 nft delete table inet warp >/dev/null 2>&1 || true
 nft delete table inet tg_tunnel >/dev/null 2>&1 || true
 
