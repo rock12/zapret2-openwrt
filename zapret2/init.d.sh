@@ -23,6 +23,48 @@ fi
 EXEDIR=/opt/$ZAPRET_CFG_NAME
 ZAPRET_BASE=/opt/$ZAPRET_CFG_NAME
 
+mkdir -p "$ZAPRET_BASE/extra_strats/cache/autocircular" 2>/dev/null
+chown -R daemon:daemon "$ZAPRET_BASE/extra_strats" 2>/dev/null
+
+LUAOPT="--lua-init=@$ZAPRET_BASE/lua/zapret-lib.lua --lua-init=@$ZAPRET_BASE/lua/zapret-antidpi.lua"
+[ -f "$ZAPRET_BASE/lua/zapret-auto.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/zapret-auto.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-alert.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-alert.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-quic-silence.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-quic-silence.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-tcp16.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-tcp16.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-fooling-ext.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-fooling-ext.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-range-rand.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-range-rand.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-modern-core.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-modern-core.lua"
+[ -f "$ZAPRET_BASE/lua/z2k-state-persist.lua" ] && LUAOPT="$LUAOPT --lua-init=@$ZAPRET_BASE/lua/z2k-state-persist.lua"
+
+BLOB_OPTS=""
+for _bpair in \
+	quic_google:quic_initial_www_google_com.bin \
+	quic5:quic_5.bin \
+	quic4:quic_4.bin \
+	quic6:quic_6.bin \
+	quic1:quic_1.bin \
+	quic_rutracker:quic_initial_rutracker_org.bin \
+	quic_dbankcloud:quic_initial_dbankcloud_ru.bin \
+	discord_udp:stun.bin \
+	stun:stun.bin \
+	syn_packet:syn_packet.bin \
+	t2:t2.bin \
+	tls_max_ru:tls_clienthello_max_ru.bin \
+	tls_clienthello_14:tls_clienthello_14.bin \
+	tls_clienthello_www_google_com:tls_clienthello_www_google_com.bin \
+	tls_clienthello_4pda_to:tls_clienthello_4pda_to.bin \
+	tls_clienthello_vk_com:tls_clienthello_vk_com.bin \
+	tls_clienthello_gosuslugi_ru:tls_clienthello_gosuslugi_ru.bin \
+	tls_clienthello_activated:tls_clienthello_activated.bin \
+	tls_clienthello_www_onetrust_com:tls_clienthello_www_onetrust_com.bin
+do
+	_bname="${_bpair%%:*}"
+	_bfile="$ZAPRET_BASE/files/fake/${_bpair#*:}"
+	[ -s "$_bfile" ] && BLOB_OPTS="$BLOB_OPTS --blob=$_bname:@$_bfile"
+done
+
+NFQWS2_OPT_BASE="$USEROPT --fwmark=$DESYNC_MARK --bind-fix4 --bind-fix6 $LUAOPT $BLOB_OPTS"
+
 is_run_on_boot && IS_RUN_ON_BOOT=1 || IS_RUN_ON_BOOT=0
 
 
