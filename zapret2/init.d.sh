@@ -79,6 +79,7 @@ function boot
 
 function start
 {
+	[ -x /opt/zapret2/sync_config.sh ] && /opt/zapret2/sync_config.sh
 	init_before_start "$DAEMON_LOG_ENABLE" "$DAEMON_LOG_SIZE_MAX"
 	/bin/sh /etc/rc.common $ZAPRET_ORIG_INITD start "$@"
 	if [ -x /opt/zapret2/warp.sh ] && [ "$(uci -q get zapret2.config.WARP_ENABLED)" = "1" ]; then
@@ -102,6 +103,7 @@ function stop
 
 function restart
 {
+	[ -x /opt/zapret2/sync_config.sh ] && /opt/zapret2/sync_config.sh
 	init_before_start "$DAEMON_LOG_ENABLE" "$DAEMON_LOG_SIZE_MAX"
 	/bin/sh /etc/rc.common $ZAPRET_ORIG_INITD restart "$@"
 	if [ -x /opt/zapret2/warp.sh ]; then
@@ -118,3 +120,9 @@ function restart
 		(exec 1000>&-; /opt/zapret2/autolearn-cidr.sh daemon >/dev/null 2>&1) &
 	fi
 }
+
+function reload_service
+{
+	restart "$@"
+}
+
