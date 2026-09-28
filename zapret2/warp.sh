@@ -480,8 +480,8 @@ warp_pbr_up() {
     ip rule add fwmark "$FWMARK" table "$WARP_TABLE" pref 1000
 
     if [ -x /sbin/fw4 ]; then
+        nft delete table inet zapret2_warp 2>/dev/null || true
         nft add table inet zapret2_warp 2>/dev/null || true
-        nft flush table inet zapret2_warp 2>/dev/null || true
         nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; auto-merge; }' 2>/dev/null || true
         
         local tmp_nft="/tmp/warp_targets.nft"
@@ -506,12 +506,6 @@ warp_pbr_up() {
             else
                 _log "Маршрутизация WARP ВЫКЛЮЧЕНА для: $gbase"
             fi
-        done
-
-        # 4. Dynamic failover targets
-        for autotgt in "$WARP_DIR/auto_targets.txt" /tmp/warp_targets.txt; do
-            [ -f "$autotgt" ] || continue
-            filter_ipv4_file "$autotgt" >> "$tmp_ips"
         done
 
         if [ -s "$tmp_ips" ]; then

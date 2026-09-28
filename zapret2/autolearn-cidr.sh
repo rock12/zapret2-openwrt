@@ -194,47 +194,7 @@ run_daemon() {
             done < "$AUTOHOSTS"
         fi
 
-        # 3. Check conntrack for hard IP bans (TCP SYN_SENT [UNREPLIED])
-        if [ -r /proc/net/nf_conntrack ]; then
-            awk '
-                /tcp/ && /SYN_SENT/ && /\[UNREPLIED\]/ {
-                    for (i=1; i<=NF; i++) {
-                        if ($i ~ /^dst=/) {
-                            sub(/^dst=/, "", $i)
-                            if ($i !~ /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.|255\.|0\.)/) {
-                                print $i
-                            }
-                        }
-                    }
-                }
-            ' /proc/net/nf_conntrack | sort -u | while read -r dead_ip; do
-                [ -n "$dead_ip" ] || continue
-                if grep -q "^$dead_ip$" "$SEEN_FILE" 2>/dev/null; then
-                    continue
-                fi
-                echo "$dead_ip" >> "$SEEN_FILE"
-
-                # Skip Google / YouTube IP ranges (already handled by DPI desync, WARP causes bot-detection)
-                case "$dead_ip" in
-                    142.250.*|142.251.*|172.217.*|172.253.*|216.58.*|64.233.*|74.125.*)
-                        continue
-                        ;;
-                esac
-
-                # Only check and route to WARP if warp interface is actually UP
-                if [ -x /opt/zapret2/warp.sh ] && ip link show dev warp 2>/dev/null | grep -q "UP"; then
-                    if ! curl -k -s --connect-timeout 2 "https://$dead_ip/" -o /dev/null 2>/dev/null; then
-                        sleep 1
-                        if ! curl -k -s --connect-timeout 2 "https://$dead_ip/" -o /dev/null 2>/dev/null; then
-                            log "Обнаружен подтвержденный IP-бан (TCP SYN drop) к $dead_ip. Перенаправление в WARP..."
-                            /opt/zapret2/warp.sh add_target "$dead_ip"
-                        fi
-                    fi
-                fi
-            done
-        fi
-
-        sleep 2
+        sleep 5
     done
 }
 
