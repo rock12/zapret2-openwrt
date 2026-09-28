@@ -263,7 +263,6 @@ uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fak
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='1' || true
-uci -q set zapret2.config.WARP_TELEGRAM='1' || true
 
 # Включение игр по умолчанию (с возможностью отключения в LuCI)
 for g in WARZONE BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE RIOT_VALORANT ROBLOX APEX_ROCKETLEAGUE UBISOFT LEAGUEOFLEGENDS WARFRAME DEADBYDAYLIGHT ARMA_REFORGER MINECRAFT CUSTOM; do
@@ -291,12 +290,6 @@ echo -e "\n${YELLOW}[5/6] Включение автозагрузки и зап�
 /etc/init.d/tg-tunnel enable 2>/dev/null || true
 /etc/init.d/tg-tunnel restart 2>/dev/null || true
 fw4 reload 2>/dev/null || true
-
-# Установка и запуск TG WS Proxy для Telegram (Socks5 порт 2080)
-if [ -x "$INSTALL_DIR/tg_proxy.sh" ]; then
-    echo "      Установка и запуск Telegram WS Proxy..."
-    "$INSTALL_DIR/tg_proxy.sh" install 2>/dev/null || true
-fi
 
 # Перезапуск веб-сервера LuCI для обновления интерфейса
 /etc/init.d/uhttpd restart 2>/dev/null || true

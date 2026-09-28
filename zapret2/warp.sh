@@ -484,22 +484,16 @@ warp_pbr_up() {
         nft flush table inet zapret2_warp 2>/dev/null || true
         nft add set inet zapret2_warp warp_targets '{ type ipv4_addr; flags interval; auto-merge; }' 2>/dev/null || true
         
-        local route_tg="$(uci -q get zapret2.config.WARP_TELEGRAM || echo 1)"
         local tmp_nft="/tmp/warp_targets.nft"
         local tmp_ips="/tmp/warp_raw_ips.txt"
         : > "$tmp_ips"
 
-        # 1. Telegram
-        if [ "$route_tg" != "0" ] && [ -s "$TG_IPS" ]; then
-            filter_ipv4_file "$TG_IPS" >> "$tmp_ips"
-        fi
-        
-        # 2. Custom user games
+        # 1. Custom user games
         if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
             filter_ipv4_file "$WARP_DIR/games_user.txt" >> "$tmp_ips"
         fi
 
-        # 3. Check each game file in $GAMES_DIR against individual UCI toggles
+        # 2. Check each game file in $GAMES_DIR against individual UCI toggles
         for gfile in "$GAMES_DIR"/*.txt; do
             [ -f "$gfile" ] || continue
             local gbase opt is_enabled
@@ -543,11 +537,7 @@ EOF
         nft add rule inet zapret2_warp output ip daddr @warp_targets meta mark set "$FWMARK" 2>/dev/null || true
     else
         ipset create warp_targets hash:net maxelem 65536 2>/dev/null || ipset flush warp_targets 2>/dev/null || true
-        local route_tg="$(uci -q get zapret2.config.WARP_TELEGRAM || echo 1)"
 
-        if [ "$route_tg" != "0" ] && [ -s "$TG_IPS" ]; then
-            filter_ipv4_file "$TG_IPS" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
-        fi
         if [ "$(uci -q get zapret2.config.WARP_GAME_CUSTOM)" != "0" ] && [ -f "$WARP_DIR/games_user.txt" ]; then
             filter_ipv4_file "$WARP_DIR/games_user.txt" | while read -r c; do ipset add warp_targets "$c" 2>/dev/null; done
         fi
@@ -564,7 +554,7 @@ EOF
         iptables -t mangle -D PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
         iptables -t mangle -A PREROUTING -m set --match-set warp_targets dst -j MARK --set-mark "$FWMARK" 2>/dev/null || true
     fi
-    _log "PBR правила для Игр и Telegram успешно применены."
+    _log "PBR правила для Игр успешно применены."
 }
 
 warp_pbr_down() {

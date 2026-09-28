@@ -705,15 +705,9 @@ return view.extend({
         s.tab(tabname, _('Cloudflare WARP (Games)'));
 
         o = s.taboption(tabname, form.Flag, 'WARP_ENABLED', _('Enable Cloudflare WARP Tunnel'));
-        o.description = _('Route Games and/or Telegram via free Cloudflare Anycast tunnel');
+        o.description = _('Route online games via free Cloudflare Anycast tunnel (AmneziaWG)');
         o.rmempty = false;
         o.default = 0;
-
-        o = s.taboption(tabname, form.Flag, 'WARP_TELEGRAM', _('Route Telegram via WARP'));
-        o.description = _('Transparently route Telegram IP ranges through WARP (unblocks Telegram on all home devices)');
-        o.rmempty = false;
-        o.default = 1;
-        o.depends('WARP_ENABLED', '1');
 
         o = s.taboption(tabname, form.Button, '_warp_register_btn', _('WARP Account Registration'));
         o.inputtitle = _('Register / Renew Account');
@@ -745,12 +739,12 @@ return view.extend({
             });
         };
 
-        o = s.taboption(tabname, form.Button, '_warp_update_lists_btn', _('Update Gaming & Telegram Lists'));
+        o = s.taboption(tabname, form.Button, '_warp_update_lists_btn', _('Update Gaming Lists'));
         o.inputtitle = _('Update Lists Now');
         o.inputstyle = 'btn';
-        o.description = _('Fetches the latest gaming IP ranges and Telegram IP ranges');
+        o.description = _('Fetches the latest gaming IP ranges');
         o.onclick = () => {
-            ui.addNotification(null, E('p', _('Updating gaming and Telegram IP lists...')));
+            ui.addNotification(null, E('p', _('Updating gaming IP lists...')));
             return fs.exec('/opt/zapret2/update-lists.sh', [ 'all' ]).then(res => {
                 if (res.code == 0) {
                     ui.addNotification(null, E('p', _('Lists updated successfully!')));
@@ -764,7 +758,7 @@ return view.extend({
 
         o = s.taboption(tabname, form.DummyValue, '_gaming_lists_header');
         o.rawhtml = true;
-        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Gaming & Telegram IP Lists (Click to View / Edit)') + '</h3>';
+        o.default = '<h3 style="margin-top: 15px; margin-bottom: 5px;">' + _('🎮 Gaming IP Lists (Click to View / Edit)') + '</h3>';
 
         const warpGames = [
             { id: 'WARP_GAME_WARZONE', file: 'Warzone_CallOfDuty.txt', title: _('Warzone / Call of Duty (772 subnets)'), desc: _('Warzone / Call of Duty server subnets') },
@@ -819,55 +813,41 @@ return view.extend({
             };
         });
 
-        /* Telegram Proxy (TG WS Proxy) tab */
+        /* Telegram Transparent Tunnel (z2k) tab */
 
         tabname = 'telegram_tab';
-        s.tab(tabname, _('Telegram (TG WS Proxy)'));
+        s.tab(tabname, _('Telegram (z2k Tunnel)'));
 
         o = s.taboption(tabname, form.DummyValue, '_tg_info_header');
         o.rawhtml = true;
-        o.default = '<div style="background: #f0f7ff; border: 1px solid #cce3f5; border-radius: 6px; padding: 12px; margin-bottom: 15px;">' +
-            '<h4 style="margin: 0 0 6px 0; color: #005fb8;">✈️ ' + _('TG WS Proxy: Telegram через Cloudflare WebSocket') + '</h4>' +
-            '<p style="margin: 0; font-size: 13px; color: #333;">' +
-            _('Сервис поднимает локальный SOCKS5-прокси на роутере (порт 2080) и заворачивает запросы Telegram в Cloudflare WebSockets (cf-proxy). ' +
-              '<strong>Белый IP не требуется</strong> — прокси работает за любым NAT/провайдерским CGNAT. ' +
-              'Для экономии памяти роутера установка производится по запросу пользователя.') +
+        o.default = '<div class="cbi-section-descr" style="padding: 12px; background: rgba(0, 120, 215, 0.08); border-left: 4px solid #0078d7; border-radius: 4px; margin-bottom: 15px;">' +
+            '<h4 style="margin: 0 0 6px 0; color: #0078d7;">✈️ ' + _('Прозрачный туннель Telegram (z2k WebSocket)') + '</h4>' +
+            '<p style="margin: 0; font-size: 13px;">' +
+            _('Весь трафик Telegram со всех домашних устройств (смартфоны, ПК, планшеты, ТВ) автоматически и прозрачно перенаправляется через быстрый WebSocket-туннель. На клиентских устройствах ничего настраивать не нужно.') +
             '</p></div>';
 
         let tg_status_dummy = s.taboption(tabname, form.DummyValue, '_tg_status_view');
         tg_status_dummy.rawhtml = true;
-        tg_status_dummy.default = '<div id="tg_status_box" style="padding: 10px; background: #fafafa; border: 1px solid #eee; border-radius: 4px; margin-bottom: 15px;">' +
-            '<span id="tg_status_indicator">⌛ ' + _('Проверка статуса TG WS Proxy...') + '</span></div>';
+        tg_status_dummy.default = '<div id="tg_status_box" style="padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.05);">' +
+            '<span id="tg_status_indicator">⌛ ' + _('Проверка статуса службы...') + '</span></div>';
 
         let refresh_tg_status = () => {
             let elem = document.getElementById('tg_status_indicator');
             if (!elem) return Promise.resolve();
-            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'status' ]).then(res => {
-                if (res.code == 0 && res.stdout) {
-                    try {
-                        let st = JSON.parse(res.stdout);
-                        if (st.running) {
-                            elem.innerHTML = '<span style="color: #2e7d32; font-weight: bold; font-size: 15px;">🟢 ЗАПУЩЕН</span> — порт: ' + st.port + 
-                                '<br /><br /><a class="btn cbi-button-apply" style="display:inline-block; padding: 6px 16px; text-decoration: none; font-weight: bold;" href="' + st.link + '">🔗 ' + _('Подключить в Telegram в 1 клик') + '</a>' +
-                                '<br /><small style="color:#666; margin-top:5px; display:inline-block;">SOCKS5: ' + st.lan_ip + ':' + st.port + ' | Ссылка: ' + st.link + '</small>';
-                        } else if (st.installed) {
-                            elem.innerHTML = '<span style="color: #ed6c02; font-weight: bold; font-size: 15px;">🟡 УСТАНОВЛЕН, НО ОСТАНОВЛЕН</span>';
-                        } else {
-                            elem.innerHTML = '<span style="color: #666; font-weight: bold; font-size: 15px;">⚪ НЕ УСТАНОВЛЕН</span> (память роутера не расходуется)';
-                        }
-                    } catch(e) {
-                        elem.textContent = res.stdout;
-                    }
+            return fs.exec('/bin/sh', [ '-c', 'pgrep -f tg-mtproxy-client >/dev/null && echo RUNNING || echo STOPPED' ]).then(res => {
+                let is_running = (res.stdout && res.stdout.includes('RUNNING'));
+                if (is_running) {
+                    elem.innerHTML = '<span style="color: #2e7d32; font-weight: bold; font-size: 15px;">🟢 ' + _('Служба АКТИВНА') + '</span> — ' + _('Прозрачный туннель Telegram работает (:1443 -> WebSocket)');
                 } else {
-                    elem.textContent = _('Статус: ') + (res.stderr || res.stdout || 'код ' + res.code);
+                    elem.innerHTML = '<span style="color: #d32f2f; font-weight: bold; font-size: 15px;">🔴 ' + _('Служба ОСТАНОВЛЕНА') + '</span>';
                 }
             }).catch(e => {
-                elem.textContent = _('Ошибка связи: ') + e.message;
+                elem.textContent = _('Ошибка: ') + e.message;
             });
         };
 
         let tg_status_btn = s.taboption(tabname, form.Button, '_tg_status_btn', _('Проверить статус'));
-        tg_status_btn.inputtitle = '🔍 ' + _('Проверить статус TG WS Proxy');
+        tg_status_btn.inputtitle = '🔍 ' + _('Обновить статус');
         tg_status_btn.inputstyle = 'btn';
         tg_status_btn.onclick = () => {
             let elem = document.getElementById('tg_status_indicator');
@@ -875,44 +855,17 @@ return view.extend({
             return refresh_tg_status();
         };
 
-        let tg_install_btn = s.taboption(tabname, form.Button, '_tg_install_btn', _('Установка сервиса'));
-        tg_install_btn.inputtitle = '📥 ' + _('Установить TG WS Proxy');
-        tg_install_btn.inputstyle = 'btn cbi-button-apply';
-        tg_install_btn.description = _('Скачивает легковесный бинарник TG WS Proxy под архитектуру роутера, регистрирует сервис в procd и сразу запускает его.');
-        tg_install_btn.onclick = () => {
-            let elem = document.getElementById('tg_status_indicator');
-            if (elem) elem.innerHTML = '⏳ <span style="color: #005fb8; font-weight: bold;">' + _('Идет установка TG WS Proxy... Пожалуйста, подождите (скачивание файла)...') + '</span>';
-            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'install' ]).then(res => {
-                return refresh_tg_status();
-            }).catch(e => {
-                if (elem) elem.textContent = _('Ошибка установки: ') + e.message;
-            });
-        };
-
-        let tg_restart_btn = s.taboption(tabname, form.Button, '_tg_restart_btn', _('Перезапуск сервиса'));
-        tg_restart_btn.inputtitle = '🔄 ' + _('Перезапустить TG WS Proxy');
-        tg_restart_btn.inputstyle = 'btn';
+        let tg_restart_btn = s.taboption(tabname, form.Button, '_tg_restart_btn', _('Перезапуск службы'));
+        tg_restart_btn.inputtitle = '🔄 ' + _('Перезапустить туннель Telegram');
+        tg_restart_btn.inputstyle = 'btn cbi-button-apply';
+        tg_restart_btn.description = _('Перезапускает фоновый демон tg-mtproxy-client и обновляет правила перенаправления nftables.');
         tg_restart_btn.onclick = () => {
             let elem = document.getElementById('tg_status_indicator');
-            if (elem) elem.innerHTML = '⏳ ' + _('Перезапуск...');
-            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'restart' ]).then(() => {
+            if (elem) elem.innerHTML = '⏳ ' + _('Перезапуск службы...');
+            return fs.exec('/etc/init.d/tg-tunnel', [ 'restart' ]).then(() => {
                 return refresh_tg_status();
             }).catch(e => {
                 if (elem) elem.textContent = _('Ошибка перезапуска: ') + e.message;
-            });
-        };
-
-        let tg_remove_btn = s.taboption(tabname, form.Button, '_tg_remove_btn', _('Удаление сервиса'));
-        tg_remove_btn.inputtitle = '🗑️ ' + _('Удалить TG WS Proxy (Освободить память)');
-        tg_remove_btn.inputstyle = 'btn cbi-button-reset';
-        tg_remove_btn.description = _('Полностью останавливает сервис и удаляет исполняемый файл для освобождения флеш-памяти.');
-        tg_remove_btn.onclick = () => {
-            let elem = document.getElementById('tg_status_indicator');
-            if (elem) elem.innerHTML = '⏳ ' + _('Удаление сервиса...');
-            return fs.exec('/opt/zapret2/tg_proxy.sh', [ 'remove' ]).then(res => {
-                return refresh_tg_status();
-            }).catch(e => {
-                if (elem) elem.textContent = _('Ошибка удаления: ') + e.message;
             });
         };
 

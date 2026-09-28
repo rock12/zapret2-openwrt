@@ -137,7 +137,6 @@ if [ $ZAPRET_CFG_NAME = "zapret2" ]; then
 	sync_param NFQWS2_OPT str
 	sync_param WARP_ENABLED
 	sync_param WARP_GAMES
-	sync_param WARP_TELEGRAM
 
 	# Append custom learned strategies
 	if [ -s "$EXE_DIR/custom_strats.txt" ]; then
