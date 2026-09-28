@@ -260,11 +260,29 @@ warp_scout() {
 check_install_deps() {
     if ! command -v awg >/dev/null 2>&1 || [ ! -e /sys/module/amneziawg ]; then
         _log "Проверка зависимостей: установка AmneziaWG пакетов..."
+        local installed=0
         if command -v apk >/dev/null 2>&1; then
-            apk update && apk add amneziawg-tools kmod-amneziawg luci-proto-amneziawg 2>&1 | tee -a "$WARP_LOG"
+            apk update >/dev/null 2>&1
+            if apk add amneziawg-tools kmod-amneziawg luci-proto-amneziawg 2>&1 | tee -a "$WARP_LOG"; then
+                installed=1
+            fi
         elif command -v opkg >/dev/null 2>&1; then
-            opkg update && opkg install amneziawg-tools kmod-amneziawg luci-proto-amneziawg 2>&1 | tee -a "$WARP_LOG"
+            opkg update >/dev/null 2>&1
+            if opkg install amneziawg-tools kmod-amneziawg luci-proto-amneziawg 2>&1 | tee -a "$WARP_LOG"; then
+                installed=1
+            fi
         fi
+
+        # Fallback to prebuilt packages from awg-openwrt (Slava-Shchipunov)
+        if ! command -v awg >/dev/null 2>&1 || [ ! -e /sys/module/amneziawg ]; then
+            _log "Пакеты отсутствуют в основном репозитории, загрузка из awg-openwrt..."
+            if command -v wget >/dev/null 2>&1; then
+                wget -qO- https://raw.githubusercontent.com/Slava-Shchipunov/awg-openwrt/refs/heads/master/amneziawg-install.sh | sh -s -- -n -e 2>&1 | tee -a "$WARP_LOG"
+            elif command -v curl >/dev/null 2>&1; then
+                curl -sL https://raw.githubusercontent.com/Slava-Shchipunov/awg-openwrt/refs/heads/master/amneziawg-install.sh | sh -s -- -n -e 2>&1 | tee -a "$WARP_LOG"
+            fi
+        fi
+        modprobe amneziawg 2>/dev/null || true
     fi
 }
 
