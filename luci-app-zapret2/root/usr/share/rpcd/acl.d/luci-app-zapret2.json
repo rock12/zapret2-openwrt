@@ -11,6 +11,7 @@
 				"/etc/crontabs/root": [ "read" ],
 				"/tmp/zapret*": [ "read" ],
 				"/etc/init.d/zapret2*": [ "exec" ],
+				"/etc/init.d/tg-tunnel*": [ "exec" ],
 				"/bin/ps*": [ "exec" ],
 				"/bin/cat*": [ "exec" ],
 				"/bin/busybox*": [ "exec" ],

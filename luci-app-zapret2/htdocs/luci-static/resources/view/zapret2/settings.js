@@ -834,15 +834,16 @@ return view.extend({
         let refresh_tg_status = () => {
             let elem = document.getElementById('tg_status_indicator');
             if (!elem) return Promise.resolve();
-            return fs.exec('/bin/sh', [ '-c', 'pgrep -f tg-mtproxy-client >/dev/null && echo RUNNING || echo STOPPED' ]).then(res => {
-                let is_running = (res.stdout && res.stdout.includes('RUNNING'));
+            return fs.exec('/bin/busybox', [ 'pidof', 'tg-mtproxy-client' ]).then(res => {
+                let is_running = (res.code == 0 && res.stdout && res.stdout.trim() !== '');
                 if (is_running) {
-                    elem.innerHTML = '<span style="color: #2e7d32; font-weight: bold; font-size: 15px;">🟢 ' + _('Служба АКТИВНА') + '</span> — ' + _('Прозрачный туннель Telegram работает (:1443 -> WebSocket)');
+                    let pid = res.stdout.trim();
+                    elem.innerHTML = '<span style="color: #2e7d32; font-weight: bold; font-size: 15px;">🟢 ' + _('Служба АКТИВНА') + '</span> — ' + _('Прозрачный туннель Telegram работает (PID: %s, порт :1443 -> WebSocket)').format(pid);
                 } else {
                     elem.innerHTML = '<span style="color: #d32f2f; font-weight: bold; font-size: 15px;">🔴 ' + _('Служба ОСТАНОВЛЕНА') + '</span>';
                 }
             }).catch(e => {
-                elem.textContent = _('Ошибка: ') + e.message;
+                elem.textContent = _('Ошибка: ') + (e.message || e);
             });
         };
 
