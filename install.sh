@@ -57,8 +57,8 @@ if [ "$PKG_MGR" = "apk" ]; then
         sed -i 's/ !https-dns-proxy//g' /lib/apk/db/installed 2>/dev/null || true
     fi
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack https-dns-proxy luci-app-https-dns-proxy"
-    AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg bind-tools"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools https-dns-proxy luci-app-https-dns-proxy"
+    AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
     
     for p in $REQUIRED_PKGS; do
         if apk info -e "$p" >/dev/null 2>&1; then
@@ -77,6 +77,12 @@ if [ "$PKG_MGR" = "apk" ]; then
             apk add "$p" 2>/dev/null || true
         fi
     done
+
+    # Fallback на универсальный установщик AmneziaWG от Slava-Shchipunov если пакеты отсутствуют в стандартных репозиториях
+    if ! command -v awg >/dev/null 2>&1 || ! lsmod | grep -q amneziawg; then
+        echo "      -> Установка AmneziaWG через скрипт Slava-Shchipunov/awg-openwrt..."
+        (curl -sSL --connect-timeout 15 https://raw.githubusercontent.com/Slava-Shchipunov/awg-openwrt/refs/heads/master/amneziawg-install.sh || wget -qO- https://raw.githubusercontent.com/Slava-Shchipunov/awg-openwrt/refs/heads/master/amneziawg-install.sh) | sh || true
+    fi
 
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
     ARCH=""
@@ -100,8 +106,8 @@ else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nf-conntrack https-dns-proxy luci-app-https-dns-proxy"
-    AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg bind-tools"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools https-dns-proxy luci-app-https-dns-proxy"
+    AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
 
     for p in $REQUIRED_PKGS; do
         if opkg list-installed | grep -qw "^$p"; then
@@ -117,6 +123,12 @@ else
             opkg install "$p" 2>/dev/null || true
         fi
     done
+
+    # Fallback на универсальный установщик AmneziaWG от Slava-Shchipunov если пакеты отсутствуют в стандартных репозиториях
+    if ! command -v awg >/dev/null 2>&1 || ! lsmod | grep -q amneziawg; then
+        echo "      -> Установка AmneziaWG через скрипт Slava-Shchipunov/awg-openwrt..."
+        (curl -sSL --connect-timeout 15 https://raw.githubusercontent.com/Slava-Shchipunov/awg-openwrt/refs/heads/master/amneziawg-install.sh || wget -qO- https://raw.githubusercontent.com/Slava-Shchipunov/awg-openwrt/refs/heads/master/amneziawg-install.sh) | sh || true
+    fi
 
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
     ARCH=""
@@ -158,6 +170,7 @@ if [ "$IS_LOCAL" = "1" ]; then
     echo "      Копирование файлов из локального каталога..."
     cp -rf "$SCRIPT_DIR/zapret2/"* "$INSTALL_DIR/" 2>/dev/null || true
     cp -f "$SCRIPT_DIR/zapret2/init.d.sh" /etc/init.d/zapret2
+    [ -f "$SCRIPT_DIR/uninstall.sh" ] && cp -f "$SCRIPT_DIR/uninstall.sh" "$INSTALL_DIR/uninstall.sh"
     
     if [ -d "$SCRIPT_DIR/luci-app-zapret2/htdocs" ]; then
         mkdir -p /www/luci-static/resources/view/zapret2
@@ -176,6 +189,7 @@ else
         [ -n "$SRC_DIR" ] || SRC_DIR="$TMP_SETUP"
         cp -rf "$SRC_DIR/zapret2/"* "$INSTALL_DIR/" 2>/dev/null || true
         cp -f "$SRC_DIR/zapret2/init.d.sh" /etc/init.d/zapret2
+        [ -f "$SRC_DIR/uninstall.sh" ] && cp -f "$SRC_DIR/uninstall.sh" "$INSTALL_DIR/uninstall.sh"
         if [ -d "$SRC_DIR/luci-app-zapret2/htdocs" ]; then
             mkdir -p /www/luci-static/resources/view/zapret2
             cp -rf "$SRC_DIR/luci-app-zapret2/htdocs/luci-static/resources/view/zapret2/"* /www/luci-static/resources/view/zapret2/ 2>/dev/null || true
@@ -245,7 +259,7 @@ uci -q set zapret2.config.MODE_FILTER='autohostlist' || true
 uci -q set zapret2.config.AUTOHOSTLIST_DEBUGLOG='1' || true
 uci -q set zapret2.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443' || true
 uci -q set zapret2.config.NFQWS2_PORTS_UDP='443,19294-19344,50000-50100' || true
-uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --blob=tls_4pda:@/opt/zapret2/files/fake/tls_clienthello_4pda_to.bin --blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=443 --filter-l7=tls --hostlist=/opt/zapret2/ipset/zapret-hosts-google.txt --payload=tls_client_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=3:time=300:retrans=2:key=google_tls:nld=2 --lua-desync=fake:blob=tls_google:repeats=8:ip_id=zero:tcp_ts=-600000:tcp_ts_up:strategy=1 --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:ip_id=zero:strategy=1 --lua-desync=hostfakesplit:host=www.google.com:ip_id=zero:tcp_ts=-600000:tcp_ts_up:strategy=2 --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-1000:strategy=3 --lua-desync=multidisorder:pos=1,sniext+1:seqovl=1:strategy=3 --lua-desync=fake:blob=tls_google:repeats=10:strategy=4 --lua-desync=multisplit:pos=1:seqovl=681:strategy=4 --in-range=x --new --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=circular:fails=3:time=60:retrans=2:maxseq=32768:inseq=4096:key=rkn_tcp:nld=2 --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up:strategy=1 --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max:strategy=1 --lua-desync=fake:blob=tls_google:repeats=8:tcp_ts=-600000:tcp_ts_up:strategy=2 --lua-desync=multisplit:pos=1:seqovl=681:seqovl_pattern=tls_google:strategy=2 --lua-desync=hostfakesplit:seqovl=726:badsum:badseq:badseq_increment=0:strategy=3 --lua-desync=fake:blob=tls_4pda:repeats=8:strategy=4 --lua-desync=multisplit:pos=1:seqovl=568:seqovl_pattern=tls_4pda:strategy=4 --lua-desync=fake:blob=0x00000000:repeats=11:tcp_seq=2:strategy=5 --lua-desync=multidisorder:pos=1,midsld:strategy=5 --lua-desync=fake:blob=tls_max:repeats=8:strategy=6 --lua-desync=fakedsplit:pos=1:strategy=6 --payload=http_req --lua-desync=http_methodeol:badsum:strategy=1 --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up:strategy=2 --lua-desync=multisplit:pos=1:seqovl=664:seqovl_pattern=tls_max:strategy=2 --in-range=x --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:blob=quic_google:repeats=11 --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --in-range=-d100 --out-range=-d100 --payload=discord_ip_discovery,stun --lua-desync=circular:fails=3:time=60:udp_in=1:udp_out=4:key=discord_voice:nld=2:hostkey=z2k_nohost_key --lua-desync=fake:blob=discord_udp:repeats=6:strategy=1 --lua-desync=fake:blob=stun_fake:repeats=8:strategy=2 --lua-desync=fake:blob=0x00000000000000000000000000000000:repeats=4:strategy=3' || true
+uci -q set zapret2.config.NFQWS2_OPT='--blob=quic_google:@/opt/zapret2/files/fake/quic_initial_www_google_com.bin --blob=discord_udp:@/opt/zapret2/files/fake/stun.bin --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=http,tls <HOSTLIST> --payload=tls_client_hello --lua-desync=multisplit:payload=tls_client_hello:dir=out:pos=1,sniext+1:seqovl=1 --payload=http_req --lua-desync=multisplit:payload=http_req:dir=out:pos=1:seqovl=1 --new --filter-udp=443 --filter-l7=quic <HOSTLIST_NOAUTO> --payload=quic_initial --lua-desync=fake:payload=quic_initial:dir=out:blob=quic_google:repeats=11 --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:payload=discord_ip_discovery,stun:dir=out:blob=discord_udp:repeats=6' || true
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='1' || true
@@ -308,4 +322,5 @@ echo -e "  - Проверить статус WARP:    ${BOLD}/opt/zapret2/warp.s
 echo -e "  - Найти минимальный пинг:   ${BOLD}/opt/zapret2/warp.sh scout${NC}"
 echo -e "  - Логи автоподбора:         ${BOLD}tail -f /tmp/autolearn.log${NC}"
 echo -e "  - Логи WARP:                ${BOLD}cat /tmp/zapret2-warp.log${NC}"
+echo -e "  - Полное удаление комплекса: ${BOLD}/opt/zapret2/uninstall.sh${NC}"
 echo ""
