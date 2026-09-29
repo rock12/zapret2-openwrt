@@ -547,3 +547,10 @@ zen-yabro-morda.mediascope.mc.yandex.ru
 zen.yandex.com
 zen.yandex.net
 zen.yandex.ru
+download.easyanticheat.net
+gfneasylogging.com
+nvidia.com
+geforce.com
+awsstatic.com
+console.aws.a2z.com
+sso.amazonaws.com
