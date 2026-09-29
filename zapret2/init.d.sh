@@ -47,9 +47,13 @@ for _bpair in \
 	quic_dbankcloud:quic_initial_dbankcloud_ru.bin \
 	discord_udp:stun.bin \
 	stun:stun.bin \
+	stun_fake:stun.bin \
 	syn_packet:syn_packet.bin \
 	t2:t2.bin \
+	tls_max:tls_clienthello_max_ru.bin \
 	tls_max_ru:tls_clienthello_max_ru.bin \
+	tls_google:tls_clienthello_www_google_com.bin \
+	blob_tls_clienthello_www_google_com:tls_clienthello_www_google_com.bin \
 	tls_clienthello_14:tls_clienthello_14.bin \
 	tls_clienthello_www_google_com:tls_clienthello_www_google_com.bin \
 	tls_clienthello_4pda_to:tls_clienthello_4pda_to.bin \
