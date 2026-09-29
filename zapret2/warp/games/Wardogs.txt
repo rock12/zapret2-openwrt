@@ -1,0 +1,23 @@
+# ==============================================================================
+# Wardogs Game Servers, Matchmaking, Valve SDR Relays & Pragma Engine
+# ==============================================================================
+# Domains
+live.wardogs.bulkhead.pragmaengine.com
+firstlook.gg
+api.epicgames.dev
+
+# Matchmaking & dedicated servers (firstlook.gg / DigitalOcean / Azure)
+8.6.112.0/24
+8.47.69.0/24
+143.244.45.177
+150.171.109.51
+104.18.29.123
+
+# Valve / Steam Datagram Relay (SDR) game networks & servers
+162.254.192.0/20
+155.133.224.0/19
+103.28.54.0/24
+103.10.124.0/23
+205.196.6.149
+45.121.184.6
+146.66.152.36

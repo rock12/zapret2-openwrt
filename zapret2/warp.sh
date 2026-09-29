@@ -450,6 +450,7 @@ game_uci_opt() {
         DeadByDaylight)            echo "WARP_GAME_DEADBYDAYLIGHT" ;;
         ArmaReforger)              echo "WARP_GAME_ARMA_REFORGER" ;;
         Minecraft_Extra)           echo "WARP_GAME_MINECRAFT" ;;
+        Wardogs)                   echo "WARP_GAME_WARDOGS" ;;
         *)
             local clean_name
             clean_name=$(echo "$gbase" | tr 'a-z' 'A-Z' | tr -c 'A-Z0-9_' '_')

@@ -815,6 +815,7 @@ return view.extend({
             { id: 'WARP_GAME_DEADBYDAYLIGHT', file: 'DeadByDaylight.txt', title: _('Dead By Daylight IP Ranges'), desc: _('Dead By Daylight servers') },
             { id: 'WARP_GAME_ARMA_REFORGER', file: 'ArmaReforger.txt', title: _('Arma Reforger IP Ranges'), desc: _('Arma Reforger game relays') },
             { id: 'WARP_GAME_MINECRAFT', file: 'Minecraft_Extra.txt', title: _('Minecraft Extra IP Ranges'), desc: _('Minecraft Bedrock and community servers') },
+            { id: 'WARP_GAME_WARDOGS', file: 'Wardogs.txt', title: _('Wardogs (Steam SDR / Bulkhead / Pragma)'), desc: _('Wardogs matchmaking, Valve SDR relays & dedicated servers') },
             { id: 'WARP_GAME_CUSTOM', file: '../games_user.txt', title: _('Custom Gaming IP List (User Added)'), desc: _('Custom gaming IP subnets') },
         ];
 
