@@ -296,10 +296,7 @@ done
 uci set dhcp.lan.dhcpv6='disabled' 2>/dev/null || true
 uci set dhcp.lan.ra='disabled' 2>/dev/null || true
 uci set dhcp.@dnsmasq[0].filter_aaaa='1' 2>/dev/null || true
-if ! uci -q get dhcp.@dnsmasq[0].address | grep -q '31.13.72.36'; then
-    uci add_list dhcp.@dnsmasq[0].address='/instagram.com/31.13.72.36' 2>/dev/null || true
-    uci add_list dhcp.@dnsmasq[0].address='/cdninstagram.com/31.13.72.36' 2>/dev/null || true
-fi
+uci -q delete dhcp.@dnsmasq[0].address 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
 /etc/init.d/dnsmasq restart 2>/dev/null || true
 /etc/init.d/odhcpd restart 2>/dev/null || true
