@@ -224,6 +224,45 @@ for f in /opt/zapret2/init.d/sysv/functions /opt/zapret2/init.d/openwrt/zapret2;
     fi
 done
 
+# Патч поддержки логов демона в LuCI (/opt/zapret2/init.d/openwrt/zapret2)
+OW_INIT="/opt/zapret2/init.d/openwrt/zapret2"
+if [ -f "$OW_INIT" ] && ! grep -q "DAEMON_LOG=" "$OW_INIT"; then
+    awk '
+    /^run_daemon\(\)/ {
+        print "DAEMON_CFGNAME=\"main\"\n"
+        print $0
+        getline; print $0
+        while (getline && $0 !~ /^}$/) {
+            # skip old body
+        }
+        print "\tlocal DAEMONBASE=\"$(basename \"$2\")\""
+        print "\techo \"Starting daemon $1: $2 $3\""
+        print "\tlocal DAEMON_NAME=\"$DAEMONBASE\""
+        print "\tlocal DAEMON_IDNUM=$1"
+        print "\tlocal DAEMON_PATH=\"$2\""
+        print "\tlocal DAEMON_ARGS=\"$3\""
+        print "\tlocal DAEMON_LOG="
+        print "\tif [ -n \"$DAEMON_LOG_FILE\" ]; then"
+        print "\t\tDAEMON_LOG=\"/tmp/zapret2+${DAEMON_NAME}+${DAEMON_IDNUM}+${DAEMON_CFGNAME}.log\""
+        print "\t\t[ -f \"$DAEMON_LOG\" ] && rm -f \"$DAEMON_LOG\""
+        print "\t\ttouch \"$DAEMON_LOG\""
+        print "\t\tchown \"$WS_USER\":\"$WS_USER\" \"$DAEMON_LOG\" 2>/dev/null || true"
+        print "\t\tchmod 666 \"$DAEMON_LOG\" 2>/dev/null || true"
+        print "\t\tif [ \"$DAEMON_LOG_ENABLE\" = \"1\" ]; then"
+        print "\t\t\tDAEMON_ARGS=\"--debug=@$DAEMON_LOG $DAEMON_ARGS\""
+        print "\t\tfi"
+        print "\tfi"
+        print "\tprocd_open_instance"
+        print "\tprocd_set_param command $DAEMON_PATH $DAEMON_ARGS"
+        print "\tprocd_set_param pidfile $PIDDIR/${DAEMONBASE}_$1.pid"
+        print "\tprocd_close_instance"
+        print "}"
+        next
+    }
+    { print }
+    ' "$OW_INIT" > "${OW_INIT}.tmp" && mv -f "${OW_INIT}.tmp" "$OW_INIT" && chmod +x "$OW_INIT"
+fi
+
 # Установка прозрачного туннеля для Telegram (tg-tunnel)
 mkdir -p /etc/nftables.d
 [ -f "$INSTALL_DIR/90-telegram.nft" ] && cp -f "$INSTALL_DIR/90-telegram.nft" /etc/nftables.d/90-telegram.nft
@@ -261,7 +300,7 @@ uci set firewall.block_quic.src='lan'
 uci set firewall.block_quic.dest='wan'
 uci set firewall.block_quic.proto='udp'
 uci set firewall.block_quic.dest_port='443'
-uci set firewall.block_quic.target='REJECT'
+uci set firewall.block_quic.target='DROP'
 uci commit firewall
 /etc/init.d/firewall reload 2>/dev/null || true
 
