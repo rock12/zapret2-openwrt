@@ -106,11 +106,17 @@ uci -q delete zapret2 >/dev/null 2>&1 || true
 uci -q delete ucitrack.@zapret2[0] >/dev/null 2>&1 || true
 rm -f /etc/config/zapret2
 
-# Восстановление настроек dnsmasq (удаление кастомных записей если были добавлены)
+# Восстановление настроек dnsmasq и firewall (удаление кастомных записей и правил блокировки QUIC)
 uci del_list dhcp.@dnsmasq[0].address='/instagram.com/31.13.72.36' >/dev/null 2>&1 || true
 uci del_list dhcp.@dnsmasq[0].address='/cdninstagram.com/31.13.72.36' >/dev/null 2>&1 || true
+uci del_list dhcp.@dnsmasq[0].address='/instagram.com/157.240.238.174' >/dev/null 2>&1 || true
+uci del_list dhcp.@dnsmasq[0].address='/cdninstagram.com/157.240.238.174' >/dev/null 2>&1 || true
+uci del_list dhcp.@dnsmasq[0].address='/discord.media/104.25.158.178' >/dev/null 2>&1 || true
+uci -q delete firewall.block_quic >/dev/null 2>&1 || true
+uci commit firewall >/dev/null 2>&1 || true
 uci commit dhcp >/dev/null 2>&1 || true
 /etc/init.d/dnsmasq restart >/dev/null 2>&1 || true
+/etc/init.d/firewall reload >/dev/null 2>&1 || true
 
 # Удаление пакетов через менеджер (если были установлены)
 if command -v apk >/dev/null 2>&1; then
