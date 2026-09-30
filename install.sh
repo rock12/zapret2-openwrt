@@ -33,7 +33,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # 2. Определение пакетного менеджера (apk vs opkg)
-echo -e "${YELLOW}[1/6] Проверка пакетного менеджера OpenWrt...${NC}"
+echo -e "${YELLOW}[1/7] Проверка пакетного менеджера OpenWrt...${NC}"
 PKG_MGR="none"
 if command -v apk >/dev/null 2>&1; then
     PKG_MGR="apk"
@@ -47,7 +47,7 @@ else
 fi
 
 # 3. Установка обязательных системных зависимостей
-echo -e "\n${YELLOW}[2/6] Установка системных зависимостей...${NC}"
+echo -e "\n${YELLOW}[2/7] Установка системных зависимостей...${NC}"
 if [ "$PKG_MGR" = "apk" ]; then
     echo "      Обновление индексов пакетов (apk update)..."
     apk update || true
@@ -57,7 +57,7 @@ if [ "$PKG_MGR" = "apk" ]; then
         sed -i 's/ !https-dns-proxy//g' /lib/apk/db/installed 2>/dev/null || true
     fi
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix https-dns-proxy luci-app-https-dns-proxy"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
     
     for p in $REQUIRED_PKGS; do
@@ -106,7 +106,7 @@ else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix https-dns-proxy luci-app-https-dns-proxy"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
 
     for p in $REQUIRED_PKGS; do
@@ -151,7 +151,7 @@ else
 fi
 
 # 4. Подготовка каталогов
-echo -e "\n${YELLOW}[3/6] Настройка каталогов и компонентов zapret2...${NC}"
+echo -e "\n${YELLOW}[3/7] Настройка каталогов и компонентов zapret2...${NC}"
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR/warp"
 mkdir -p "$INSTALL_DIR/warp/games"
@@ -317,7 +317,7 @@ uci commit firewall
 /etc/init.d/firewall reload 2>/dev/null || true
 
 # 6. Конфигурация UCI по умолчанию
-echo -e "\n${YELLOW}[4/6] Настройка конфигурации сервиса и тумблеров игр...${NC}"
+echo -e "\n${YELLOW}[4/7] Настройка конфигурации сервиса и тумблеров игр...${NC}"
 if [ -x "$INSTALL_DIR/uci-def-cfg.sh" ]; then
     "$INSTALL_DIR/uci-def-cfg.sh" >/dev/null 2>&1 || true
 fi
@@ -343,10 +343,31 @@ for g in WARZONE COMMUNITY BATTLEFIELD6 STEAM EA_ORIGIN BATTLENET EPIC_FORTNITE 
     fi
 done
 
-# Оптимизация DNS и IPv6: отключение раздачи IPv6 на LAN во избежание утечек трафика мимо Zapret2
+# 7. Полное отключение IPv6 (предотвращает утечки трафика мимо Zapret2 и DPI обходов)
+echo -e "\n${YELLOW}[5/7] Отключение IPv6 и предотвращение утечек DNS...${NC}"
 uci set dhcp.lan.dhcpv6='disabled' 2>/dev/null || true
 uci set dhcp.lan.ra='disabled' 2>/dev/null || true
+uci -q delete dhcp.lan.ra_flags 2>/dev/null || true
+uci -q delete dhcp.lan.ra_slaac 2>/dev/null || true
 uci set dhcp.@dnsmasq[0].filter_aaaa='1' 2>/dev/null || true
+
+# Отключение DHCPv6 клиента на внешнем интерфейсе WAN6
+if [ -n "$(uci -q get network.wan6)" ]; then
+    uci set network.wan6.auto='0' 2>/dev/null || true
+fi
+
+# Безопасное отключение IPv6 через sysctl (сохраняя loopback для локальных сокетов)
+mkdir -p /etc/sysctl.d
+cat > /etc/sysctl.d/99-disable-ipv6.conf << 'EOF'
+net.ipv6.conf.all.disable_ipv6 = 0
+net.ipv6.conf.default.disable_ipv6 = 0
+net.ipv6.conf.lo.disable_ipv6 = 0
+net.ipv6.conf.wan.disable_ipv6 = 1
+net.ipv6.conf.br-lan.disable_ipv6 = 1
+EOF
+sysctl -p /etc/sysctl.d/99-disable-ipv6.conf >/dev/null 2>&1 || true
+
+# Настройка DNS-пинов в dnsmasq для стабильной работы Instagram и Discord Voice
 uci -q delete dhcp.@dnsmasq[0].address 2>/dev/null || true
 uci add_list dhcp.@dnsmasq[0].address='/instagram.com/157.240.238.174' 2>/dev/null || true
 uci add_list dhcp.@dnsmasq[0].address='/cdninstagram.com/157.240.238.174' 2>/dev/null || true
@@ -354,14 +375,48 @@ uci add_list dhcp.@dnsmasq[0].address='/discord.media/104.25.158.178' 2>/dev/nul
 uci commit dhcp 2>/dev/null || true
 /etc/init.d/dnsmasq restart 2>/dev/null || true
 /etc/init.d/odhcpd restart 2>/dev/null || true
+
+# 8. Интеллектуальная настройка MTU и TCP MSS Clamping (1 роутер или каскад из 2 роутеров)
+echo -e "\n${YELLOW}[6/7] Настройка MTU и защита от фрагментации пакетов...${NC}"
+uci set firewall.@zone[1].mtu_fix='1' 2>/dev/null || true
+uci commit firewall 2>/dev/null || true
+
+WAN_DEV="$(uci -q get network.wan.device || echo "wan")"
+WAN_PROTO="$(uci -q get network.wan.proto || echo "dhcp")"
+WAN_IP="$(ip -4 addr show dev "$WAN_DEV" 2>/dev/null | grep -o 'inet [0-9.]*' | cut -d' ' -f2 | head -n 1)"
+
+IS_CASCADE=0
+case "$WAN_IP" in
+    10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[0-1].*)
+        IS_CASCADE=1
+        ;;
+esac
+
+if [ "$IS_CASCADE" = "1" ]; then
+    echo -e "      ${CYAN}-> Обнаружен каскад из 2 роутеров (WAN IP: $WAN_IP за вышестоящим роутером/ONT)${NC}"
+    echo -e "      -> Установка защитного MTU 1480 на WAN (предотвращает дропы десинка и застревание пакетов в Double NAT)"
+    uci set network.wan.mtu='1480' 2>/dev/null || true
+else
+    echo -e "      ${GREEN}-> Обнаружено прямое подключение провайдера (1 роутер)${NC}"
+    if [ "$WAN_PROTO" = "pppoe" ]; then
+        echo -e "      -> Протокол PPPoE: установка MTU 1492"
+        uci set network.wan.mtu='1492' 2>/dev/null || true
+    else
+        echo -e "      -> Протокол $WAN_PROTO: установка стандартного MTU 1500"
+        uci set network.wan.mtu='1500' 2>/dev/null || true
+    fi
+fi
+uci commit network 2>/dev/null || true
 uci commit zapret2 2>/dev/null || true
 
-# 7. Запуск сервисов
-echo -e "\n${YELLOW}[5/5] Включение автозагрузки и запуск служб...${NC}"
+# 9. Запуск сервисов
+echo -e "\n${YELLOW}[7/7] Включение автозагрузки и запуск служб...${NC}"
 /etc/init.d/zapret2 enable 2>/dev/null || true
 /etc/init.d/zapret2 restart 2>/dev/null || true
 /etc/init.d/tg-tunnel enable 2>/dev/null || true
 /etc/init.d/tg-tunnel restart 2>/dev/null || true
+/etc/init.d/https-dns-proxy enable 2>/dev/null || true
+/etc/init.d/https-dns-proxy restart 2>/dev/null || true
 fw4 reload 2>/dev/null || true
 
 # Перезапуск веб-сервера LuCI для обновления интерфейса
