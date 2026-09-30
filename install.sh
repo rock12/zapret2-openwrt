@@ -57,7 +57,7 @@ if [ "$PKG_MGR" = "apk" ]; then
         sed -i 's/ !https-dns-proxy//g' /lib/apk/db/installed 2>/dev/null || true
     fi
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
     
     for p in $REQUIRED_PKGS; do
@@ -106,7 +106,7 @@ else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
 
     for p in $REQUIRED_PKGS; do
@@ -205,7 +205,14 @@ else
 fi
 
 # 5. Устранение CRLF и установка прав на исполнение
-sed -i 's/\r$//' "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/warp/*.sh "$INSTALL_DIR"/warp/*.awk "$INSTALL_DIR"/warp/*.txt /etc/init.d/zapret2 2>/dev/null || true
+if command -v dos2unix >/dev/null 2>&1; then
+    find "$INSTALL_DIR" -type f \( -name "*.sh" -o -name "*.lua" -o -name "*.awk" -o -name "*.txt" -o -name "*.init" -o -name "*.nft" \) -exec dos2unix {} + 2>/dev/null || true
+    dos2unix /etc/init.d/zapret2 /opt/zapret2/init.d/openwrt/zapret2 2>/dev/null || true
+fi
+for f in "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/warp/*.sh "$INSTALL_DIR"/warp/*.awk "$INSTALL_DIR"/warp/*.txt /etc/init.d/zapret2 /opt/zapret2/init.d/openwrt/zapret2; do
+    [ -f "$f" ] || continue
+    tr -d '\r' < "$f" > "${f}.tmp" && mv -f "${f}.tmp" "$f" 2>/dev/null || true
+done
 chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null || true
 chmod +x /etc/init.d/zapret2
 [ -f "$INSTALL_DIR/warp/WARP.conf" ] && chmod 600 "$INSTALL_DIR/warp/WARP.conf"
@@ -324,7 +331,7 @@ uci -q set zapret2.config.NFQWS2_TCP_PKT_OUT='50' || true
 uci -q set zapret2.config.NFQWS2_TCP_PKT_IN='20' || true
 uci -q set zapret2.config.NFQWS2_UDP_PKT_OUT='8' || true
 uci -q set zapret2.config.NFQWS2_UDP_PKT_IN='8' || true
-uci -q set zapret2.config.NFQWS2_OPT='--filter-tcp=443,2053,2083,2087,2096,8443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT_GV/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=tls --hostlist=/opt/zapret2/extra_strats/TCP/RKN/Discord.txt --hostlist=/opt/zapret2/extra_strats/TCP/RKN/List.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-user.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-exclude=/opt/zapret2/ipset/zapret-hosts-user-exclude.txt --hostlist-auto=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-auto-fail-threshold=3 --hostlist-auto-fail-time=60 --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=multisplit --new --filter-udp=1400,3478-3481,5349,19294-19344,50000-65535 --filter-l7=discord,stun --in-range=x --out-range=-d4 --payload=discord_ip_discovery,stun --lua-desync=fake:payload=all:blob=quic_dbankcloud:repeats=6' || true
+uci -q set zapret2.config.NFQWS2_OPT='--filter-tcp=443,2053,2083,2087,2096,8443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT_GV/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=tls --hostlist=/opt/zapret2/extra_strats/TCP/RKN/Discord.txt --hostlist=/opt/zapret2/extra_strats/TCP/RKN/List.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-user.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-exclude=/opt/zapret2/ipset/zapret-hosts-user-exclude.txt --hostlist-auto=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-auto-fail-threshold=3 --hostlist-auto-fail-time=60 --hostlist-auto-debug=/opt/zapret2/ipset/zapret-hosts-auto-debug.log --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=multisplit --new --filter-udp=1400,3478-3481,5349,19294-19344,50000-65535 --filter-l7=discord,stun --in-range=x --out-range=-d4 --payload=discord_ip_discovery,stun --lua-desync=fake:payload=all:blob=quic_dbankcloud:repeats=6' || true
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='0' || true

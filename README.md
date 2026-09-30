@@ -139,6 +139,65 @@ wget -qO- https://raw.githubusercontent.com/rock12/zapret2-openwrt/zap1/install.
 
 ---
 
+---
+
+## 🎙️ Полная разблокировка Discord (Web, Client & Голос RTC)
+
+В комплексе реализована полноценная разблокировка всех компонентов Discord, включая голосовые каналы:
+1. **Голосовые порты и медиа-потоки (UDP)**:
+   - `1400, 3478-3481, 5349` — протоколы STUN/TURN (обнаружение NAT и установка прямого p2p-канала);
+   - `19294-19344` — медиа-порты Discord (RTC Voice Fallback);
+   - `50000-65535` — динамический WebRTC RTP пул голосовых серверов Discord.
+2. **UDP десинк (Voice)**:
+   - Правило: `--filter-udp=1400,3478-3481,5349,19294-19344,50000-65535 --filter-l7=discord,stun --lua-desync=fake:payload=all:blob=quic_dbankcloud:repeats=6`.
+   - `nftables` перехватывает порты на выходе (`postnat dport`) и на входящих ответах (`prenat sport`).
+3. **DNS-пин голоса (Voice Endpoints)**:
+   - Все поддомены `*.discord.media` (например, `finland*.discord.media`, `rotterdam*.discord.media`) через `dnsmasq` привязаны к Cloudflare IP `104.25.158.178`. Это полностью предотвращает зависание клиента на статусе *«Connecting» / «Подключение к RTC...»*.
+
+---
+
+## 🌐 RuTracker & Cloudflare: Устранение зависания на 10-12 КБ
+
+Ранее при загрузке сайтов под защитой Cloudflare (`discord.com`, `rutracker.org`, `nnmclub.to`) соединение зависало после первых 10-12 КБ из-за того, что 7-сегментный `multidisorder` триггерил анти-DDoS фильтры Cloudflare.
+- **Решение**: Применена стратегия **`fake_badseq_multisplit`**:
+  ```text
+  --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=multisplit
+  ```
+- **Результат**: Фейки с фиктивными `tcp_seq` и `tcp_ack` обманывают ТСПУ, а серверы Cloudflare корректно отбрасывают их и отдают трафик на полной скорости без зависаний (тесты: RuTracker и Discord отдают HTTP 200 за < 0.5 с).
+
+---
+
+## 🧠 Автоподбор стратегий и автообучение новым сайтам
+
+Система поддерживает два уровня автоматизации:
+
+### 1. Автообучение новым доменам (`hostlist-auto` + `autolearn-cidr.sh`)
+- Если вы или ваше приложение открываете новый заблокированный ресурс, которого ещё нет в списках:
+  1. Демон `nfqws2` фиксирует 3 сбоя соединения в течение 60 секунд (`--hostlist-auto-fail-threshold=3`).
+  2. Домен автоматически записывается в `/opt/zapret2/ipset/zapret-hosts-auto.txt` и лог `/opt/zapret2/ipset/zapret-hosts-auto-debug.log`.
+  3. Фоновый демон `autolearn-cidr.sh` (PID в `/tmp/zapret2_autolearn.lock`) моментально резолвит домен, агрегирует подсеть CDN (`/24`) и добавляет её в `nftables set zapret`.
+  4. Последующие запросы к ресурсу идут через десинк автоматически.
+- **Мониторинг логов**: `tail -f /tmp/zapret2_autolearn.log`.
+
+### 2. Экспресс-подбор рабочей стратегии под домен (`quick-tune.sh`)
+Если вам нужно мгновенно подобрать стратегию под проблемный ресурс:
+```sh
+/opt/zapret2/quick-tune.sh <домен>
+```
+Скрипт поочередно тестирует стек стратегий и выводит готовую команду с кодом `SUCCESS`.
+
+### 3. Встроенные тесты диагностики (`dwc.sh`)
+- **Проверка сайтов** (YouTube, Discord, RuTracker, Instagram, Госуслуги и др.):
+  ```sh
+  /opt/zapret2/dwc.sh -s
+  ```
+- **Проверка DPI по TCP 16-20** (мировые CDN: Cloudflare, Akamai, AWS, Hetzner, Fastly):
+  ```sh
+  /opt/zapret2/dwc.sh
+  ```
+
+---
+
 ## 🛠️ Полезные команды терминала (CLI)
 
 | Команда | Описание |
@@ -146,12 +205,14 @@ wget -qO- https://raw.githubusercontent.com/rock12/zapret2-openwrt/zap1/install.
 | `/opt/zapret2/warp.sh status` | Показать статус подключения WARP и текущий эндпоинт |
 | `/opt/zapret2/warp.sh scout` | Найти и включить сервер Cloudflare с минимальным пингом |
 | `/opt/zapret2/warp.sh reload` | Перезагрузить правила фаервола для игр без рестарта службы |
-| `/opt/zapret2/update-lists.sh all` | Обновить игровые списки и IP Telegram из апстрима с фильтрацией |
-| `/opt/zapret2/autotune.sh <домен>` | Запустить автоматический подбор рабочей стратегии под конкретный сайт |
-| `/opt/zapret2/autolearn-cidr.sh list` | Показать список автоматически изученных доменов и подсетей |
-| `tail -f /tmp/autolearn.log` | Просмотр журнала автоподбора доменов в реальном времени |
-| `cat /tmp/zapret2-warp.log` | Просмотр лога игрового туннеля WARP |
-| `/etc/init.d/zapret2 reload` | Мгновенная синхронизация настроек и перезапуск `nfqws2` |
+| `/opt/zapret2/dwc.sh -s` | Запустить тест доступности сайтов (Sites check) |
+| `/opt/zapret2/dwc.sh` | Запустить тест устойчивости DPI по CDN (DPI check) |
+| `/opt/zapret2/quick-tune.sh <домен>` | Быстрый автоподбор лучшей стратегии под домен |
+| `/opt/zapret2/update-lists.sh all` | Обновить списки блокировок и IP Telegram из апстрима |
+| `tail -f /tmp/zapret2_autolearn.log` | Просмотр журнала автообучения доменов и CDN в реальном времени |
+| `cat /opt/zapret2/ipset/zapret-hosts-auto.txt` | Просмотр списка автоматически обученных ресурсов |
+| `/etc/init.d/tg-tunnel status` | Проверка статуса прозрачного туннеля Telegram |
+| `/etc/init.d/zapret2 restart` | Перезапуск службы Zapret2 и фонового демона автообучения |
 | `/opt/zapret2/uninstall.sh` | Полное удаление комплекса с роутера |
 
 ---
