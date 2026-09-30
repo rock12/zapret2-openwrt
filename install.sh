@@ -319,12 +319,12 @@ uci -q set zapret2.config.DAEMON_LOG_SIZE_MAX='2000' || true
 uci -q set zapret2.config.MODE_FILTER='autohostlist' || true
 uci -q set zapret2.config.AUTOHOSTLIST_DEBUGLOG='1' || true
 uci -q set zapret2.config.NFQWS2_PORTS_TCP='80,443,2053,2083,2087,2096,8443' || true
-uci -q set zapret2.config.NFQWS2_PORTS_UDP='19294-19344,50000-50100' || true
+uci -q set zapret2.config.NFQWS2_PORTS_UDP='19294-19344,50000-65535' || true
 uci -q set zapret2.config.NFQWS2_TCP_PKT_OUT='50' || true
 uci -q set zapret2.config.NFQWS2_TCP_PKT_IN='20' || true
 uci -q set zapret2.config.NFQWS2_UDP_PKT_OUT='8' || true
 uci -q set zapret2.config.NFQWS2_UDP_PKT_IN='8' || true
-uci -q set zapret2.config.NFQWS2_OPT='--filter-tcp=443,2053,2083,2087,2096,8443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT_GV/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=tls --hostlist=/opt/zapret2/extra_strats/TCP/RKN/Discord.txt --hostlist=/opt/zapret2/extra_strats/TCP/RKN/List.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-user.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-exclude=/opt/zapret2/ipset/zapret-hosts-user-exclude.txt --hostlist-auto=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-auto-fail-threshold=3 --hostlist-auto-fail-time=60 --payload=tls_client_hello --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:blob=discord_udp:repeats=6' || true
+uci -q set zapret2.config.NFQWS2_OPT='--filter-tcp=443,2053,2083,2087,2096,8443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=443 --filter-l7=tls,unknown --hostlist=/opt/zapret2/extra_strats/TCP/YT_GV/List.txt --payload=tls_client_hello,http_req,http_reply,unknown,tls_server_hello --out-range=-s34228 --in-range=-s5556 --lua-desync=multidisorder:pos=1,sniext+1,host+1,midsld-2,midsld,midsld+2,endhost-1 --new --filter-tcp=80,443,2053,2083,2087,2096,8443 --filter-l7=tls --hostlist=/opt/zapret2/extra_strats/TCP/RKN/Discord.txt --hostlist=/opt/zapret2/extra_strats/TCP/RKN/List.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-user.txt --hostlist=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-exclude=/opt/zapret2/ipset/zapret-hosts-user-exclude.txt --hostlist-auto=/opt/zapret2/ipset/zapret-hosts-auto.txt --hostlist-auto-fail-threshold=3 --hostlist-auto-fail-time=60 --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=multisplit --new --filter-udp=19294-19344,50000-65535 --filter-l7=discord,stun --payload=discord_ip_discovery,stun --lua-desync=fake:blob=discord_udp:repeats=6' || true
 uci -q delete zapret2.config.WARP_GAMES || true
 uci -q set zapret2.config.run_on_boot='1' || true
 uci -q set zapret2.config.WARP_ENABLED='0' || true
@@ -343,6 +343,7 @@ uci set dhcp.@dnsmasq[0].filter_aaaa='1' 2>/dev/null || true
 uci -q delete dhcp.@dnsmasq[0].address 2>/dev/null || true
 uci add_list dhcp.@dnsmasq[0].address='/instagram.com/157.240.238.174' 2>/dev/null || true
 uci add_list dhcp.@dnsmasq[0].address='/cdninstagram.com/157.240.238.174' 2>/dev/null || true
+uci add_list dhcp.@dnsmasq[0].address='/discord.media/104.25.158.178' 2>/dev/null || true
 uci commit dhcp 2>/dev/null || true
 /etc/init.d/dnsmasq restart 2>/dev/null || true
 /etc/init.d/odhcpd restart 2>/dev/null || true
