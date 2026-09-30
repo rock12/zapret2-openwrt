@@ -3,7 +3,8 @@ START=95
 USE_PROCD=1
 
 BIN="/usr/bin/tg-mtproxy-client"
-NFT_CFG="/etc/nftables.d/90-telegram.nft"
+NFT_CFG="/opt/zapret2/90-telegram.nft"
+[ -f "$NFT_CFG" ] || NFT_CFG="/etc/nftables.d/90-telegram.nft"
 
 start_service() {
     [ -x "$BIN" ] || return 1

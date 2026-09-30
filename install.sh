@@ -269,8 +269,7 @@ if [ -f "$OW_INIT" ] && ! grep -q "DAEMON_LOG=" "$OW_INIT"; then
 fi
 
 # Установка прозрачного туннеля для Telegram (tg-tunnel)
-mkdir -p /etc/nftables.d
-[ -f "$INSTALL_DIR/90-telegram.nft" ] && cp -f "$INSTALL_DIR/90-telegram.nft" /etc/nftables.d/90-telegram.nft
+rm -f /etc/nftables.d/90-telegram.nft 2>/dev/null || true
 [ -f "$INSTALL_DIR/tg-tunnel.init" ] && cp -f "$INSTALL_DIR/tg-tunnel.init" /etc/init.d/tg-tunnel && chmod +x /etc/init.d/tg-tunnel
 
 if [ ! -x /usr/bin/tg-mtproxy-client ]; then
@@ -284,7 +283,8 @@ if [ ! -x /usr/bin/tg-mtproxy-client ]; then
         mips*)    TG_URL="https://raw.githubusercontent.com/necronicle/z2k/z2k-enhanced/mtproxy-client/builds/tg-mtproxy-client-linux-mips" ;;
     esac
     if [ -n "$TG_URL" ]; then
-        curl -sSL -o /usr/bin/tg-mtproxy-client "$TG_URL" 2>/dev/null && chmod +x /usr/bin/tg-mtproxy-client || true
+        echo "      -> Скачивание клиента прозрачного туннеля Telegram ($TG_ARCH)..."
+        (curl -sSL -k --retry 3 --connect-timeout 15 -o /usr/bin/tg-mtproxy-client "$TG_URL" 2>/dev/null || wget -q --no-check-certificate -O /usr/bin/tg-mtproxy-client "$TG_URL" 2>/dev/null) && chmod +x /usr/bin/tg-mtproxy-client || true
     fi
 fi
 
