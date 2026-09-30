@@ -356,13 +356,6 @@ samsungcloudsolution.com
 # =====================================================
 play.google.com
 snap-storage-cdn.l.google.com
-rutracker.org
-www.rutracker.org
-rutracker.cc
-static.rutracker.cc
-api.rutracker.cc
-rep.rutracker.cc
-rutracker.wiki
 hcaptcha.com
 2gis.com
 2gis.ru
