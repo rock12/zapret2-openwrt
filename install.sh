@@ -87,7 +87,7 @@ if [ "$PKG_MGR" = "apk" ]; then
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
     ARCH=""
     [ -f /etc/openwrt_release ] && ARCH="$(. /etc/openwrt_release && echo "$DISTRIB_ARCH")"
-    RELEASE_URL="https://github.com/rock12/zapret2-openwrt/releases/download/v1.0.5.1"
+    RELEASE_URL="https://github.com/rock12/zapret2-openwrt/releases/download/v1.0.5.2"
     if ! apk info -e zapret2 >/dev/null 2>&1 || [ ! -x /opt/zapret2/nfq2/nfqws2 ]; then
         if [ -n "$ARCH" ]; then
             echo "      -> Установка бинарного пакета zapret2 ($ARCH)..."
@@ -133,7 +133,7 @@ else
     # Установка бинарного пакета zapret2 (nfqws2) и luci-app-zapret2 при их отсутствии
     ARCH=""
     [ -f /etc/openwrt_release ] && ARCH="$(. /etc/openwrt_release && echo "$DISTRIB_ARCH")"
-    RELEASE_URL="https://github.com/rock12/zapret2-openwrt/releases/download/v1.0.5.1"
+    RELEASE_URL="https://github.com/rock12/zapret2-openwrt/releases/download/v1.0.5.2"
     if ! opkg list-installed | grep -qw "^zapret2" || [ ! -x /opt/zapret2/nfq2/nfqws2 ]; then
         if [ -n "$ARCH" ]; then
             echo "      -> Установка бинарного пакета zapret2 ($ARCH)..."
