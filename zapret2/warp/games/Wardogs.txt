@@ -7,8 +7,6 @@ firstlook.gg
 api.epicgames.dev
 
 # Matchmaking & dedicated servers (firstlook.gg / DigitalOcean / Azure)
-8.6.112.0/24
-8.47.69.0/24
 143.244.45.177
 150.171.109.51
 104.18.29.123
