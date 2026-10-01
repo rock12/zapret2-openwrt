@@ -57,7 +57,7 @@ if [ "$PKG_MGR" = "apk" ]; then
         sed -i 's/ !https-dns-proxy//g' /lib/apk/db/installed 2>/dev/null || true
     fi
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix https-dns-proxy luci-app-https-dns-proxy"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix https-dns-proxy luci-app-https-dns-proxy wireguard-tools coreutils-base64"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
     
     for p in $REQUIRED_PKGS; do
@@ -106,7 +106,7 @@ else
     echo "      Обновление индексов пакетов (opkg update)..."
     opkg update || true
 
-    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix https-dns-proxy luci-app-https-dns-proxy"
+    REQUIRED_PKGS="curl ca-bundle ca-certificates nftables kmod-nft-core kmod-nft-nat kmod-nft-queue kmod-nf-conntrack ip-full bind-tools dos2unix https-dns-proxy luci-app-https-dns-proxy wireguard-tools coreutils-base64"
     AMNEZIA_PKGS="kmod-amneziawg amneziawg-tools luci-proto-amneziawg"
 
     for p in $REQUIRED_PKGS; do
@@ -301,6 +301,8 @@ fi
 cat > /etc/hotplug.d/iface/99-warp << 'EOF'
 [ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "warp" ] || exit 0
 ip route replace default dev warp table 100 2>/dev/null || true
+ip rule del fwmark 0x1000 table 100 2>/dev/null || true
+ip rule add fwmark 0x1000 table 100 pref 1000 2>/dev/null || true
 [ -x /opt/zapret2/warp.sh ] && /opt/zapret2/warp.sh reload >/dev/null 2>&1 &
 exit 0
 EOF

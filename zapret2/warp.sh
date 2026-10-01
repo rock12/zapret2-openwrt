@@ -678,6 +678,8 @@ warp_add_target() {
     fi
 
     ip route replace default dev warp table "$WARP_TABLE" 2>/dev/null || true
+    ip rule del fwmark "$FWMARK" table "$WARP_TABLE" 2>/dev/null || true
+    ip rule add fwmark "$FWMARK" table "$WARP_TABLE" pref 1000 2>/dev/null || true
 
     if [ -x /sbin/fw4 ]; then
         nft add table inet zapret2_warp 2>/dev/null || true
