@@ -37,7 +37,7 @@ fi
 
 # Patterns to test (Top winners from live ISP autotuning):
 PATTERNS="
-1|fake_badseq_multisplit|--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=tls_google:@/opt/zapret2/files/fake/tls_clienthello_www_google_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=fake:blob=tls_google:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=multisplit
+1|fake_badseq_multisplit|--blob=stun_fake:@/opt/zapret2/files/fake/stun.bin --blob=tls_clienthello_vk_com:@/opt/zapret2/files/fake/tls_clienthello_vk_com.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=stun_fake:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=fake:blob=tls_clienthello_vk_com:repeats=6:tcp_seq=1000:tcp_ack=-66000 --lua-desync=multisplit
 2|hostfakesplit_mailru|--blob=tls_max:@/opt/zapret2/files/fake/tls_clienthello_max_ru.bin --filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=fake:blob=tls_max:repeats=8:tcp_ts=-600000:tcp_ts_up --lua-desync=hostfakesplit:host=mail.ru:tcp_ts=-600000:tcp_ts_up
 3|clean_multisplit|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=multisplit:pos=1,midsld
 4|hostfakesplit_ts_md5|--filter-tcp=443 --filter-l7=tls --payload=tls_client_hello --lua-desync=hostfakesplit:tcp_md5:tcp_ts=-600000:tcp_ts_up

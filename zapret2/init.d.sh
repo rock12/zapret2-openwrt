@@ -6,8 +6,8 @@
 [ -n "$IPKG_INSTROOT" ] || [ -n "$ROOT" ] && exit 0
 
 USE_PROCD=1
-# after network
-START=21
+# after network, firewall, and wan
+START=90
 
 SCRIPT_FILENAME=$1
 
